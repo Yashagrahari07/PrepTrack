@@ -1,0 +1,22 @@
+# Workspace & Agents
+.agents/
+
+# Environment Variables
+.env
+*.env.local
+
+# Go Build Output & Binaries
+backend/bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# IDE & System Files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
