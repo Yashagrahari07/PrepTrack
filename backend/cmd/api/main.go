@@ -12,6 +12,7 @@ import (
 	echomw "github.com/labstack/echo/v4/middleware"
 	"github.com/yash/preptrack-backend/internal/config"
 	"github.com/yash/preptrack-backend/internal/db"
+	"github.com/yash/preptrack-backend/internal/handler"
 	"github.com/yash/preptrack-backend/internal/middleware"
 )
 
@@ -31,14 +32,22 @@ func main() {
 	// Health check endpoint
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]interface{}{
-			"status":    "healthy",
-			"timestamp": time.Now().Format(time.RFC3339),
+			"status":      "healthy",
+			"timestamp":   time.Now().Format(time.RFC3339),
 			"environment": cfg.AppEnv,
 		})
 	})
 
-	// Root API group
-	api := e.Group("/api")
+	authH := handler.NewAuthHandler(pool, cfg)
+
+	// Rate-limited public auth group (max 10 requests/min per IP)
+	authGroup := e.Group("/api/auth", middleware.AuthRateLimiter())
+	authGroup.POST("/signup", authH.Signup)
+	authGroup.POST("/login", authH.Login)
+
+	// Protected API group (JWT required)
+	api := e.Group("/api", middleware.JWT(cfg))
+	api.GET("/auth/me", authH.Me)
 
 	// Base API test route
 	api.GET("/ping", func(c echo.Context) error {

@@ -15,6 +15,23 @@ type UserSettings struct {
 	DSASheetURL       string  `json:"dsa_sheet_url"`
 }
 
+type SignupRequest struct {
+	DisplayName string `json:"display_name"`
+	Email       string `json:"email"`
+	Password    string `json:"password"`
+	InviteCode  string `json:"invite_code"`
+}
+
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type AuthResponse struct {
+	Token string `json:"token"`
+	User  User   `json:"user"`
+}
+
 type Category struct {
 	ID         string    `json:"id"`
 	UserID     string    `json:"user_id"`
