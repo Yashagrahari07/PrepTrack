@@ -40,6 +40,10 @@ func main() {
 
 	authH := handler.NewAuthHandler(pool, cfg)
 	settingsH := handler.NewSettingsHandler(pool)
+	catH := handler.NewCategoryHandler(pool)
+	topicH := handler.NewTopicHandler(pool)
+	resH := handler.NewResourceHandler(pool)
+	logH := handler.NewStudyLogHandler(pool)
 
 	// Rate-limited public auth group (max 10 requests/min per IP)
 	authGroup := e.Group("/api/auth", middleware.AuthRateLimiter())
@@ -53,6 +57,29 @@ func main() {
 	// User Settings routes
 	api.GET("/settings", settingsH.Get)
 	api.PATCH("/settings", settingsH.Update)
+
+	// Categories routes
+	api.GET("/categories", catH.List)
+	api.POST("/categories", catH.Create)
+	api.PATCH("/categories/:id", catH.Update)
+	api.DELETE("/categories/:id", catH.Delete)
+
+	// Topics routes
+	api.GET("/categories/:id/topics", topicH.ListByCategory)
+	api.GET("/topics/:id", topicH.Get)
+	api.POST("/topics", topicH.Create)
+	api.PATCH("/topics/:id", topicH.Update)
+	api.DELETE("/topics/:id", topicH.Delete)
+
+	// Resources routes
+	api.GET("/topics/:id/resources", resH.List)
+	api.POST("/topics/:id/resources", resH.Create)
+	api.PATCH("/resources/:id", resH.Update)
+	api.DELETE("/resources/:id", resH.Delete)
+
+	// Study Logs routes
+	api.GET("/topics/:id/logs", logH.ListByTopic)
+	api.POST("/study-logs", logH.Create)
 
 	// Base API test route
 	api.GET("/ping", func(c echo.Context) error {
