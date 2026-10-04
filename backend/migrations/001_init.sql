@@ -19,7 +19,7 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE TABLE IF NOT EXISTS user_settings (
     user_id              UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     weekly_target_hours  NUMERIC(4,1) DEFAULT 15.0,
-    dsa_sheet_url        TEXT DEFAULT 'https://leetcode.com',
+    dsa_sheet_url        TEXT DEFAULT 'https://neetcode.io/practice/practice/neetcode150',
     updated_at           TIMESTAMPTZ DEFAULT NOW()
 );
 

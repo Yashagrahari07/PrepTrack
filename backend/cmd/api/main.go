@@ -39,6 +39,7 @@ func main() {
 	})
 
 	authH := handler.NewAuthHandler(pool, cfg)
+	settingsH := handler.NewSettingsHandler(pool)
 
 	// Rate-limited public auth group (max 10 requests/min per IP)
 	authGroup := e.Group("/api/auth", middleware.AuthRateLimiter())
@@ -48,6 +49,10 @@ func main() {
 	// Protected API group (JWT required)
 	api := e.Group("/api", middleware.JWT(cfg))
 	api.GET("/auth/me", authH.Me)
+
+	// User Settings routes
+	api.GET("/settings", settingsH.Get)
+	api.PATCH("/settings", settingsH.Update)
 
 	// Base API test route
 	api.GET("/ping", func(c echo.Context) error {

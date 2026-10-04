@@ -10,9 +10,15 @@ type User struct {
 }
 
 type UserSettings struct {
-	UserID            string  `json:"user_id"`
-	WeeklyTargetHours float64 `json:"weekly_target_hours"`
-	DSASheetURL       string  `json:"dsa_sheet_url"`
+	UserID            string    `json:"user_id"`
+	WeeklyTargetHours float64   `json:"weekly_target_hours"`
+	DSASheetURL       string    `json:"dsa_sheet_url"`
+	UpdatedAt         time.Time `json:"updated_at"`
+}
+
+type UpdateSettingsRequest struct {
+	WeeklyTargetHours *float64 `json:"weekly_target_hours"`
+	DSASheetURL       *string  `json:"dsa_sheet_url"`
 }
 
 type SignupRequest struct {

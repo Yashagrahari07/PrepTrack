@@ -81,10 +81,10 @@ func (h *AuthHandler) Signup(c echo.Context) error {
 		return sendError(c, http.StatusInternalServerError, "DATABASE_ERROR", "Failed to create user account")
 	}
 
-	// Initialize user settings default row
+	// Initialize user settings default row using DB defaults
 	_, err = tx.Exec(ctx,
-		`INSERT INTO user_settings (user_id, weekly_target_hours, dsa_sheet_url)
-		 VALUES ($1, 15.0, 'https://takeuforward.org/strivers-a2z-dsa-course/strivers-a2z-dsa-course-sheet-2/')
+		`INSERT INTO user_settings (user_id)
+		 VALUES ($1)
 		 ON CONFLICT (user_id) DO NOTHING`,
 		user.ID,
 	)
