@@ -3,10 +3,12 @@ import { Toaster } from 'sonner';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { ThemeProvider } from '@/providers/ThemeProvider';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import AppLayout from '@/components/layout/AppLayout';
 import LandingPage from '@/pages/LandingPage';
 import LoginPage from '@/pages/LoginPage';
 import SignupPage from '@/pages/SignupPage';
 import DashboardPage from '@/pages/DashboardPage';
+import CurriculumPage from '@/pages/CurriculumPage';
 
 export default function App() {
     return (
@@ -21,8 +23,10 @@ export default function App() {
 
                         {/* ── Protected Routes ────────────────────── */}
                         <Route element={<ProtectedRoute />}>
-                            <Route path="/app" element={<DashboardPage />} />
-                            {/* Additional /app/* routes will be added here */}
+                            <Route element={<AppLayout />}>
+                                <Route path="/app" element={<DashboardPage />} />
+                                <Route path="/app/curriculum" element={<CurriculumPage />} />
+                            </Route>
                         </Route>
 
                         {/* ── Catch-all ───────────────────────────── */}
