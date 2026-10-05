@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Search, Plus, BookOpen, Sparkles } from 'lucide-react';
+import { Search, Plus, BookOpen, Sparkles, FolderPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCategories, useCategoryTopics } from '@/hooks/useCurriculum';
 import { CategoryTabList } from '@/components/curriculum/CategoryTabList';
 import { TopicTreeCard } from '@/components/curriculum/TopicTreeCard';
 import { TopicFormModal } from '@/components/curriculum/TopicFormModal';
+import { CategoryFormModal } from '@/components/curriculum/CategoryFormModal';
 import type { Topic } from '@/lib/types';
 
 export default function CurriculumPage() {
@@ -15,9 +16,12 @@ export default function CurriculumPage() {
     const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Modal state
+    // Topic Modal state
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
     const [parentTopicForSubtopic, setParentTopicForSubtopic] = useState<Topic | null>(null);
+
+    // Category Modal state
+    const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
     // Default to first category if none selected
     const activeCategory =
@@ -56,14 +60,25 @@ export default function CurriculumPage() {
                         Curriculum Management
                     </h1>
                     <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-xl">
-                        Organize your backend prep across 8 core domains. Track status from Not Started to Interview Ready.
+                        Organize your backend prep across domains. Click any topic or &ldquo;Studio&rdquo; to attach resources (YouTube, blogs, docs) and write markdown notes.
                     </p>
                 </div>
 
-                <Button onClick={handleOpenCreateTopic} className="gap-2 shrink-0 shadow-lg shadow-primary/20">
-                    <Plus className="w-4 h-4" />
-                    <span>Add Topic</span>
-                </Button>
+                <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
+                    <Button
+                        variant="outline"
+                        onClick={() => setIsCategoryModalOpen(true)}
+                        className="gap-1.5 text-xs"
+                    >
+                        <FolderPlus className="w-4 h-4 text-primary" />
+                        <span>Add Domain</span>
+                    </Button>
+
+                    <Button onClick={handleOpenCreateTopic} className="gap-2 shadow-lg shadow-primary/20">
+                        <Plus className="w-4 h-4" />
+                        <span>Add Topic</span>
+                    </Button>
+                </div>
             </div>
 
             {/* Domain Tabs Bar */}
@@ -78,6 +93,7 @@ export default function CurriculumPage() {
                     categories={categories}
                     selectedCategoryId={selectedCategoryId}
                     onSelectCategory={(id) => setSelectedCategoryId(id)}
+                    onAddCategory={() => setIsCategoryModalOpen(true)}
                 />
             )}
 
@@ -144,6 +160,12 @@ export default function CurriculumPage() {
                 categories={categories}
                 defaultCategoryId={activeCategoryId}
                 parentTopic={parentTopicForSubtopic}
+            />
+
+            {/* Create Category / Domain Modal */}
+            <CategoryFormModal
+                isOpen={isCategoryModalOpen}
+                onClose={() => setIsCategoryModalOpen(false)}
             />
         </div>
     );

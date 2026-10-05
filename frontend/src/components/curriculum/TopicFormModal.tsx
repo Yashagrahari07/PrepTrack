@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, BookPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,9 +58,15 @@ export function TopicFormModal({
         );
     };
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md animate-fade-in">
-            <div className="relative w-full max-w-md glass-panel rounded-3xl p-6 border border-white/10 shadow-2xl animate-fade-up">
+    return createPortal(
+        <div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in"
+            onClick={onClose}
+        >
+            <div
+                className="relative w-full max-w-md bg-card border border-border rounded-3xl p-6 shadow-2xl animate-fade-up"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-2.5">
                         <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
@@ -114,6 +121,7 @@ export function TopicFormModal({
                     </Button>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 }

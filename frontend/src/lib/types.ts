@@ -28,8 +28,8 @@ export interface SignupRequest {
 
 export type TopicStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'LEARNED' | 'INTERVIEW_READY';
 
-export type ResourceType = 'YOUTUBE_PLAYLIST' | 'DEV_BLOG' | 'OFFICIAL_DOCS' | 'GITHUB_REPO' | 'OTHER';
-export type ResourceStatus = 'TO_DO' | 'DOING' | 'DONE';
+export type ResourceType = 'YOUTUBE_VIDEO' | 'YOUTUBE_PLAYLIST' | 'DEV_BLOG' | 'OFFICIAL_DOCS' | 'OTHER';
+export type ResourceStatus = 'TODO' | 'DOING' | 'DONE';
 
 export interface Category {
     id: string;
@@ -55,28 +55,37 @@ export interface Topic {
 
 export interface Resource {
     id: string;
+    user_id?: string;
+    topic_id: string;
     type: ResourceType;
     title: string;
     url: string;
     est_minutes: number;
     status: ResourceStatus;
+    created_at?: string;
 }
 
 export interface StudyLog {
     id: string;
+    user_id?: string;
+    topic_id: string;
     logged_on: string;
     minutes: number;
     comment?: string;
+    created_at?: string;
 }
 
 export interface Revision {
     id: string;
+    user_id?: string;
     topic_id: string;
     topic_title: string;
     category_name: string;
     notes_md?: string;
     due_on: string;
-    days_overdue: number;
+    done_on?: string | null;
+    confidence?: number | null;
+    days_overdue?: number;
 }
 
 export interface CategoryProgress {

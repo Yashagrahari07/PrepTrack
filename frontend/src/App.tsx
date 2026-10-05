@@ -9,6 +9,8 @@ import LoginPage from '@/pages/LoginPage';
 import SignupPage from '@/pages/SignupPage';
 import DashboardPage from '@/pages/DashboardPage';
 import CurriculumPage from '@/pages/CurriculumPage';
+import TopicWorkspacePage from '@/pages/TopicWorkspacePage';
+import RevisionsPage from '@/pages/RevisionsPage';
 
 export default function App() {
     return (
@@ -26,6 +28,8 @@ export default function App() {
                             <Route element={<AppLayout />}>
                                 <Route path="/app" element={<DashboardPage />} />
                                 <Route path="/app/curriculum" element={<CurriculumPage />} />
+                                <Route path="/app/topics/:id" element={<TopicWorkspacePage />} />
+                                <Route path="/app/revisions" element={<RevisionsPage />} />
                             </Route>
                         </Route>
 

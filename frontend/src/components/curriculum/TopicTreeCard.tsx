@@ -12,6 +12,7 @@ import {
     Circle,
     PlayCircle,
     Flame,
+    ExternalLink,
 } from 'lucide-react';
 import { useUpdateTopic, useDeleteTopic } from '@/hooks/useCurriculum';
 import { useUIStore } from '@/stores/uiStore';
@@ -78,7 +79,7 @@ export function TopicTreeCard({ topic, categoryColor = '#6366f1', onAddSubtopic 
     return (
         <div className="glass-panel rounded-2xl p-4 sm:p-5 border border-border flex flex-col gap-3 transition-all duration-200 hover:border-border/80">
             {/* Main Topic Row */}
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start justify-between gap-3 flex-wrap sm:flex-nowrap">
                 {/* Title & Expand toggle */}
                 <div className="flex items-start gap-2.5 flex-1 min-w-0">
                     {subtopics.length > 0 && (
@@ -104,18 +105,23 @@ export function TopicTreeCard({ topic, categoryColor = '#6366f1', onAddSubtopic 
                             />
                             <Link
                                 to={`/app/topics/${topic.id}`}
-                                className="font-semibold text-foreground text-sm sm:text-base hover:text-primary transition-colors truncate"
+                                className="font-semibold text-foreground text-sm sm:text-base hover:text-primary transition-colors truncate flex items-center gap-1.5"
+                                title="Click to open Topic Studio (Resources & Notes)"
                             >
-                                {topic.title}
+                                <span className="truncate">{topic.title}</span>
                             </Link>
                         </div>
 
                         {/* Metadata row */}
                         <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-                            <span className="flex items-center gap-1">
-                                <BookOpen className="w-3 h-3" />
-                                {topic.resource_count ?? 0} resources
-                            </span>
+                            <Link
+                                to={`/app/topics/${topic.id}`}
+                                className="flex items-center gap-1 hover:text-primary transition-colors"
+                                title="Attached Resources"
+                            >
+                                <BookOpen className="w-3 h-3 text-sky-400" />
+                                <span>{topic.resource_count ?? 0} resources</span>
+                            </Link>
 
                             {/* Confidence Star Rating */}
                             <div className="flex items-center gap-0.5">
@@ -142,14 +148,24 @@ export function TopicTreeCard({ topic, categoryColor = '#6366f1', onAddSubtopic 
                     </div>
                 </div>
 
-                {/* Right Actions: Status Dropdown & Buttons */}
-                <div className="flex items-center gap-2 shrink-0">
+                {/* Right Actions: Workspace link, Status Dropdown & Action Buttons */}
+                <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+                    {/* Open Workspace Studio Button */}
+                    <Link
+                        to={`/app/topics/${topic.id}`}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-medium border border-primary/20 transition-all"
+                        title="Open Topic Studio to attach resources, write markdown notes, & view logs"
+                    >
+                        <span>Studio</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                    </Link>
+
                     {/* Status Dropdown */}
                     <select
                         value={topic.status}
                         onChange={(e) => handleStatusChange(e.target.value as TopicStatus)}
                         className={cn(
-                            'px-2.5 py-1 rounded-xl text-xs font-semibold border cursor-pointer focus:outline-none transition-all',
+                            'px-2.5 py-1.5 rounded-xl text-xs font-semibold border cursor-pointer focus:outline-none transition-all',
                             currentStatusConfig.bg,
                             currentStatusConfig.text,
                         )}
@@ -175,7 +191,7 @@ export function TopicTreeCard({ topic, categoryColor = '#6366f1', onAddSubtopic 
                         type="button"
                         onClick={() => onAddSubtopic(topic)}
                         className="p-1.5 rounded-xl bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                        title="Add subtopic"
+                        title="Add subtopic under this topic"
                     >
                         <Plus className="w-4 h-4" />
                     </button>
@@ -204,12 +220,25 @@ export function TopicTreeCard({ topic, categoryColor = '#6366f1', onAddSubtopic 
                             >
                                 <div className="flex items-center gap-2 min-w-0">
                                     <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 shrink-0" />
-                                    <span className="text-xs font-medium text-foreground truncate">
+                                    <Link
+                                        to={`/app/topics/${sub.id}`}
+                                        className="text-xs font-medium text-foreground hover:text-primary transition-colors truncate"
+                                        title="Open Subtopic Studio (Resources & Notes)"
+                                    >
                                         {sub.title}
-                                    </span>
+                                    </Link>
                                 </div>
 
                                 <div className="flex items-center gap-2 shrink-0">
+                                    <Link
+                                        to={`/app/topics/${sub.id}`}
+                                        className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors px-1.5 py-0.5 rounded bg-muted/40"
+                                        title="Open Subtopic Studio"
+                                    >
+                                        <span>Studio</span>
+                                        <ExternalLink className="w-3 h-3" />
+                                    </Link>
+
                                     <select
                                         value={sub.status}
                                         onChange={(e) =>

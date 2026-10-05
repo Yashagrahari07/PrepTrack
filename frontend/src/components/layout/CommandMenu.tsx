@@ -73,8 +73,14 @@ export function CommandMenu() {
     );
 
     return (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 p-4 bg-background/80 backdrop-blur-md animate-fade-in">
-            <div className="relative w-full max-w-xl glass-panel rounded-3xl overflow-hidden border border-white/10 shadow-2xl animate-fade-up">
+        <div
+            className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 p-4 bg-black/60 backdrop-blur-md animate-fade-in"
+            onClick={closeCommandMenu}
+        >
+            <div
+                className="relative w-full max-w-xl bg-card border border-border rounded-3xl overflow-hidden shadow-2xl animate-fade-up"
+                onClick={(e) => e.stopPropagation()}
+            >
                 {/* Search Header */}
                 <div className="relative flex items-center px-4 py-3 border-b border-border">
                     <Search className="w-5 h-5 text-muted-foreground ml-2 shrink-0" />

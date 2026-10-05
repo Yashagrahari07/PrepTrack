@@ -1,18 +1,21 @@
+import { Plus } from 'lucide-react';
 import type { Category } from '@/lib/types';
 
 interface CategoryTabListProps {
     categories: Category[];
     selectedCategoryId: string | null;
     onSelectCategory: (id: string | null) => void;
+    onAddCategory?: () => void;
 }
 
 export function CategoryTabList({
     categories,
     selectedCategoryId,
     onSelectCategory,
+    onAddCategory,
 }: CategoryTabListProps) {
     return (
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none items-center">
             <button
                 type="button"
                 onClick={() => onSelectCategory(null)}
@@ -51,6 +54,17 @@ export function CategoryTabList({
                     </button>
                 );
             })}
+
+            {onAddCategory && (
+                <button
+                    type="button"
+                    onClick={onAddCategory}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-dashed border-border text-muted-foreground hover:text-primary hover:border-primary/50 transition-all whitespace-nowrap"
+                >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>New Domain</span>
+                </button>
+            )}
         </div>
     );
 }

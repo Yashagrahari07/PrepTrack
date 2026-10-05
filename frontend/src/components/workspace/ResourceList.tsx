@@ -1,0 +1,287 @@
+import { useState } from 'react';
+import { createPortal } from 'react-dom';
+import {
+    ExternalLink,
+    Plus,
+    Trash2,
+    Video,
+    FileText,
+    BookOpen,
+    Link2,
+    CheckCircle2,
+    Clock,
+    Circle,
+    X,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    useTopicResources,
+    useCreateResource,
+    useUpdateResource,
+    useDeleteResource,
+} from '@/hooks/useResources';
+import type { Resource, ResourceType, ResourceStatus } from '@/lib/types';
+import { cn } from '@/lib/utils';
+
+interface ResourceListProps {
+    topicId: string;
+}
+
+const typeIcons: Record<ResourceType, React.ReactNode> = {
+    YOUTUBE_VIDEO: <Video className="w-4 h-4 text-red-500" />,
+    YOUTUBE_PLAYLIST: <Video className="w-4 h-4 text-red-400" />,
+    DEV_BLOG: <FileText className="w-4 h-4 text-emerald-400" />,
+    OFFICIAL_DOCS: <BookOpen className="w-4 h-4 text-sky-400" />,
+    OTHER: <Link2 className="w-4 h-4 text-indigo-400" />,
+};
+
+const statusStyles: Record<ResourceStatus, { label: string; bg: string; text: string; icon: React.ReactNode }> = {
+    TODO: {
+        label: 'To Do',
+        bg: 'bg-muted/50 border-muted-foreground/20',
+        text: 'text-muted-foreground',
+        icon: <Circle className="w-3 h-3" />,
+    },
+    DOING: {
+        label: 'Doing',
+        bg: 'bg-amber-500/10 border-amber-500/30',
+        text: 'text-amber-400',
+        icon: <Clock className="w-3 h-3" />,
+    },
+    DONE: {
+        label: 'Done',
+        bg: 'bg-emerald-500/10 border-emerald-500/30',
+        text: 'text-emerald-400',
+        icon: <CheckCircle2 className="w-3 h-3" />,
+    },
+};
+
+export function ResourceList({ topicId }: ResourceListProps) {
+    const { data: rawResources = [], isLoading } = useTopicResources(topicId);
+    const resources = Array.isArray(rawResources) ? rawResources : [];
+
+    const { mutate: createResource, isPending: isCreating } = useCreateResource(topicId);
+    const { mutate: updateResource } = useUpdateResource(topicId);
+    const { mutate: deleteResource } = useDeleteResource(topicId);
+
+    // Form Modal state
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [title, setTitle] = useState('');
+    const [url, setUrl] = useState('');
+    const [type, setType] = useState<ResourceType>('DEV_BLOG');
+    const [estMinutes, setEstMinutes] = useState(30);
+
+    const handleAddSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!title.trim() || !url.trim()) return;
+
+        createResource(
+            { type, title: title.trim(), url: url.trim(), est_minutes: estMinutes },
+            {
+                onSuccess: () => {
+                    setTitle('');
+                    setUrl('');
+                    setIsAddModalOpen(false);
+                },
+            },
+        );
+    };
+
+    return (
+        <div className="glass-panel rounded-3xl p-6 border border-white/10 flex flex-col gap-4">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <div>
+                    <h3 className="font-bold text-foreground text-sm sm:text-base flex items-center gap-2">
+                        <span>Curated Resources</span>
+                        <span className="text-xs font-normal text-muted-foreground">
+                            ({resources.length}/3 max)
+                        </span>
+                    </h3>
+                </div>
+
+                <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsAddModalOpen(true)}
+                    disabled={resources.length >= 3}
+                    className="gap-1 text-xs"
+                >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Attach Resource</span>
+                </Button>
+            </div>
+
+            {/* List */}
+            {isLoading ? (
+                <div className="flex flex-col gap-2">
+                    {[1, 2].map((i) => (
+                        <div key={i} className="h-16 rounded-xl bg-card border border-border animate-pulse" />
+                    ))}
+                </div>
+            ) : resources.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground flex flex-col items-center gap-2">
+                    <p>No resources attached yet. Attach up to 3 videos, docs, or blogs.</p>
+                </div>
+            ) : (
+                <div className="flex flex-col gap-2.5">
+                    {resources.map((res: Resource) => {
+                        const statusConfig = statusStyles[res.status] || statusStyles.TODO;
+                        return (
+                            <div
+                                key={res.id}
+                                className="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-border gap-3 transition-colors hover:border-border/80"
+                            >
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                    <div className="w-8 h-8 rounded-xl bg-muted/40 flex items-center justify-center shrink-0">
+                                        {typeIcons[res.type] || <Link2 className="w-4 h-4 text-muted-foreground" />}
+                                    </div>
+
+                                    <div className="flex flex-col min-w-0">
+                                        <a
+                                            href={res.url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="font-medium text-xs sm:text-sm text-foreground hover:text-primary transition-colors truncate flex items-center gap-1.5"
+                                        >
+                                            <span className="truncate">{res.title}</span>
+                                            <ExternalLink className="w-3 h-3 text-muted-foreground shrink-0" />
+                                        </a>
+                                        <span className="text-[10px] text-muted-foreground">
+                                            Est. {res.est_minutes} mins
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 shrink-0">
+                                    {/* Status selector */}
+                                    <select
+                                        value={res.status}
+                                        onChange={(e) =>
+                                            updateResource({
+                                                id: res.id,
+                                                data: { status: e.target.value as ResourceStatus },
+                                            })
+                                        }
+                                        className={cn(
+                                            'px-2 py-1 rounded-xl text-[11px] font-semibold border cursor-pointer focus:outline-none transition-all',
+                                            statusConfig.bg,
+                                            statusConfig.text,
+                                        )}
+                                    >
+                                        <option value="TODO">To Do</option>
+                                        <option value="DOING">Doing</option>
+                                        <option value="DONE">Done</option>
+                                    </select>
+
+                                    {/* Delete */}
+                                    <button
+                                        onClick={() => deleteResource(res.id)}
+                                        className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                        title="Remove resource"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {/* Modal to attach resource - Portaled directly to document.body */}
+            {isAddModalOpen &&
+                createPortal(
+                    <div
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in"
+                        onClick={() => setIsAddModalOpen(false)}
+                    >
+                        <div
+                            className="relative w-full max-w-md bg-card border border-border shadow-2xl rounded-3xl p-6 animate-fade-up"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-base font-bold text-foreground">Attach Curated Resource</h3>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsAddModalOpen(false)}
+                                    className="text-muted-foreground hover:text-foreground p-1 rounded-lg transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleAddSubmit} className="flex flex-col gap-4">
+                                <div className="flex flex-col gap-1.5">
+                                    <Label htmlFor="res-type">Resource Type</Label>
+                                    <select
+                                        id="res-type"
+                                        value={type}
+                                        onChange={(e) => setType(e.target.value as ResourceType)}
+                                        className="h-10 rounded-xl border border-border bg-input/30 px-3 text-xs text-foreground"
+                                    >
+                                        <option value="YOUTUBE_VIDEO">YouTube Video</option>
+                                        <option value="YOUTUBE_PLAYLIST">YouTube Playlist</option>
+                                        <option value="DEV_BLOG">Dev Blog</option>
+                                        <option value="OFFICIAL_DOCS">Official Docs</option>
+                                        <option value="OTHER">Other Link</option>
+                                    </select>
+                                </div>
+
+                                <div className="flex flex-col gap-1.5">
+                                    <Label htmlFor="res-title">Title</Label>
+                                    <Input
+                                        id="res-title"
+                                        placeholder="e.g. Postgres Indexing Deep Dive"
+                                        value={title}
+                                        onChange={(e) => setTitle(e.target.value)}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="flex flex-col gap-1.5">
+                                    <Label htmlFor="res-url">URL</Label>
+                                    <Input
+                                        id="res-url"
+                                        type="url"
+                                        placeholder="https://..."
+                                        value={url}
+                                        onChange={(e) => setUrl(e.target.value)}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="flex flex-col gap-1.5">
+                                    <Label htmlFor="res-time">Est. Minutes</Label>
+                                    <Input
+                                        id="res-time"
+                                        type="number"
+                                        min={5}
+                                        max={600}
+                                        value={estMinutes}
+                                        onChange={(e) => setEstMinutes(Number(e.target.value))}
+                                    />
+                                </div>
+
+                                <div className="flex justify-end gap-2 mt-2">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        onClick={() => setIsAddModalOpen(false)}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button type="submit" isLoading={isCreating}>
+                                        Attach
+                                    </Button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>,
+                    document.body,
+                )}
+        </div>
+    );
+}
