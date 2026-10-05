@@ -44,6 +44,9 @@ func main() {
 	topicH := handler.NewTopicHandler(pool)
 	resH := handler.NewResourceHandler(pool)
 	logH := handler.NewStudyLogHandler(pool)
+	dashH := handler.NewDashboardHandler(pool)
+	revH := handler.NewRevisionHandler(pool)
+	statsH := handler.NewStatsHandler(pool)
 
 	// Rate-limited public auth group (max 10 requests/min per IP)
 	authGroup := e.Group("/api/auth", middleware.AuthRateLimiter())
@@ -57,6 +60,16 @@ func main() {
 	// User Settings routes
 	api.GET("/settings", settingsH.Get)
 	api.PATCH("/settings", settingsH.Update)
+
+	// Dashboard route
+	api.GET("/dashboard", dashH.Get)
+
+	// Revisions routes
+	api.GET("/revisions/due", revH.ListDue)
+	api.POST("/revisions/:id/complete", revH.Complete)
+
+	// Stats route
+	api.GET("/stats", statsH.Get)
 
 	// Categories routes
 	api.GET("/categories", catH.List)
