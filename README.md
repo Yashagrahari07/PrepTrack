@@ -90,7 +90,7 @@ cd backend
 
 # 1. Configure env
 Copy-Item .env.example .env
-# Edit .env and set DATABASE_URL, JWT_SECRET (generate with: openssl rand -hex 32), INVITE_CODE.
+# Edit .env and set DATABASE_URL and JWT_SECRET (generate with: openssl rand -hex 32).
 # PORT defaults to 8080. ALLOWED_ORIGIN defaults to http://localhost:5173.
 
 # 2. Install dependencies and verify the build
@@ -118,7 +118,6 @@ go run ./cmd/api
 |--------------------|----------|--------------------------|--------------------------------------------------------------|
 | `DATABASE_URL`     | Yes      | None                     | Postgres connection string (a Neon pooled URL works)         |
 | `JWT_SECRET`       | Yes      | None                     | Random secret of 32 bytes or more for cookie signing         |
-| `INVITE_CODE`      | Yes      | None                     | Closed-signup gate                                           |
 | `PORT`             | No       | `8080`                   | Render injects this in production                            |
 | `ALLOWED_ORIGIN`   | No       | `http://localhost:5173`  | Comma-separated list is supported for multiple frontends     |
 | `APP_ENV`          | No       | `development`            | Set `production` on Render for `Secure` and `SameSite=None` cookies |
@@ -159,7 +158,7 @@ signup, login, logout, and health require authentication.
 
 | Method and path                                                                                                  | Purpose                                              |
 |------------------------------------------------------------------------------------------------------------------|------------------------------------------------------|
-| `POST /api/auth/signup`                                                                                          | Body `{display_name, email, password, invite_code}`, returns `201 {token, user}` |
+| `POST /api/auth/signup`                                                                                          | Body `{display_name, email, password}`, returns `201 {token, user}` |
 | `POST /api/auth/login`                                                                                           | Body `{email, password}`, returns `200 {token, user}` |
 | `GET /api/auth/me`, `POST /api/auth/logout`                                                                      | Current user, clear the auth cookie                  |
 | `GET /health`, `GET /`                                                                                           | Public liveness probes                               |
