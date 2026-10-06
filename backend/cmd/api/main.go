@@ -29,6 +29,16 @@ func main() {
 	e.Use(echomw.Recover())
 	e.Use(middleware.CORS(cfg))
 
+	// Root endpoint for platform probes hitting / (Render health checks).
+	e.GET("/", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, map[string]interface{}{
+			"service":     "preptrack-api",
+			"status":      "healthy",
+			"timestamp":   time.Now().Format(time.RFC3339),
+			"environment": cfg.AppEnv,
+		})
+	})
+
 	// Health check endpoint
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]interface{}{
