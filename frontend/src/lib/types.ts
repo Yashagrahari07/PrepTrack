@@ -88,40 +88,59 @@ export interface Revision {
     days_overdue?: number;
 }
 
-export interface CategoryProgress {
+export interface CategoryProgressItem {
     category_id: string;
-    name: string;
+    category_name: string;
     color: string;
     total_topics: number;
-    interview_ready: number;
     learned: number;
     in_progress: number;
     not_started: number;
 }
 
-export interface HeatmapDay {
+export interface HeatmapItem {
     date: string;
     minutes: number;
 }
 
-export interface TodaysFocus {
-    topic_id: string;
-    category_name: string;
-    topic_title: string;
-    confidence: number;
+export interface DashboardResponse {
+    streak_days: number;
+    weekly_hours: number;
+    weekly_target_hours: number;
+    revisions_due_count: number;
+    focus_topic: Topic | null;
+    category_progress: CategoryProgressItem[];
+    heatmap: HeatmapItem[];
 }
 
-export interface DashboardData {
-    streak: number;
-    weekly_logged_minutes: number;
-    weekly_target_minutes: number;
-    todays_focus: TodaysFocus | null;
-    revisions_due_count: number;
-    category_progress: CategoryProgress[];
-    heatmap: HeatmapDay[];
+export interface WeeklyChartItem {
+    week_start: string;
+    hours: number;
+}
+
+export interface TopTopicItem {
+    topic_id: string;
+    topic_title: string;
+    category_name: string;
+    total_minutes: number;
+}
+
+export interface StatsResponse {
+    total_logged_minutes: number;
+    total_sessions: number;
+    weekly_hours_chart: WeeklyChartItem[];
+    top_topics: TopTopicItem[];
+    heatmap: HeatmapItem[];
 }
 
 export interface UserSettings {
+    user_id?: string;
     weekly_target_hours: number;
     dsa_sheet_url: string;
+    updated_at?: string;
+}
+
+export interface UpdateSettingsRequest {
+    weekly_target_hours?: number;
+    dsa_sheet_url?: string;
 }

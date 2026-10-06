@@ -28,7 +28,7 @@ export function TopNav() {
         return 'Control Center';
     };
 
-    const dsaUrl = settings?.dsa_sheet_url || 'https://leetcode.com';
+    const dsaUrl = settings?.dsa_sheet_url || 'https://neetcode.io/practice/practice/neetcode150';
 
     return (
         <header className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 py-3.5 bg-card/80 backdrop-blur-md border-b border-border">

@@ -1,14 +1,12 @@
 import apiClient from '@/lib/axios';
-import type { UserSettings } from '@/lib/types';
+import type { UserSettings, UpdateSettingsRequest } from '@/lib/types';
 
-// GET /api/settings -> returns { settings: UserSettings }
-export async function getSettingsApi(): Promise<UserSettings> {
-    const response = await apiClient.get<{ settings: UserSettings }>('/api/settings');
+export async function getSettings(): Promise<UserSettings> {
+    const response = await apiClient.get('/api/settings');
     return response.data.settings;
 }
 
-// PATCH /api/settings -> returns { settings: UserSettings }
-export async function updateSettingsApi(data: Partial<UserSettings>): Promise<UserSettings> {
-    const response = await apiClient.patch<{ settings: UserSettings }>('/api/settings', data);
+export async function updateSettings(data: UpdateSettingsRequest): Promise<UserSettings> {
+    const response = await apiClient.patch('/api/settings', data);
     return response.data.settings;
 }

@@ -11,6 +11,8 @@ import DashboardPage from '@/pages/DashboardPage';
 import CurriculumPage from '@/pages/CurriculumPage';
 import TopicWorkspacePage from '@/pages/TopicWorkspacePage';
 import RevisionsPage from '@/pages/RevisionsPage';
+import StatsPage from '@/pages/StatsPage';
+import SettingsPage from '@/pages/SettingsPage';
 
 export default function App() {
     return (
@@ -30,6 +32,8 @@ export default function App() {
                                 <Route path="/app/curriculum" element={<CurriculumPage />} />
                                 <Route path="/app/topics/:id" element={<TopicWorkspacePage />} />
                                 <Route path="/app/revisions" element={<RevisionsPage />} />
+                                <Route path="/app/stats" element={<StatsPage />} />
+                                <Route path="/app/settings" element={<SettingsPage />} />
                             </Route>
                         </Route>
 
