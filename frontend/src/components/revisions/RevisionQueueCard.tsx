@@ -47,7 +47,7 @@ export function RevisionQueueCard({ revision }: RevisionQueueCardProps) {
                 </h3>
 
                 <Link
-                    to={`/app/topics/${revision.topic_id}`}
+                    to={`/home/topics/${revision.topic_id}`}
                     className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 shrink-0 font-medium"
                     title="Open Topic Workspace"
                 >

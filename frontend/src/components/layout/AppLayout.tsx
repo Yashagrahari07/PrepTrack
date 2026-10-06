@@ -3,6 +3,7 @@ import { Sidebar } from './Sidebar';
 import { TopNav } from './TopNav';
 import { QuickLogModal } from './QuickLogModal';
 import { CommandMenu } from './CommandMenu';
+import { RateLimitBanner } from './RateLimitBanner';
 
 export function AppLayout() {
     return (
@@ -25,6 +26,7 @@ export function AppLayout() {
             </div>
 
             {/* Global Overlays */}
+            <RateLimitBanner />
             <QuickLogModal />
             <CommandMenu />
         </div>

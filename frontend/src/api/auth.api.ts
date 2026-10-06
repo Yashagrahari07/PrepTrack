@@ -15,6 +15,11 @@ export async function signupApi(data: SignupRequest): Promise<AuthResponse> {
 
 // GET /api/auth/me
 export async function getMeApi(): Promise<User> {
-    const response = await apiClient.get<User>('/api/auth/me');
-    return response.data;
+    const response = await apiClient.get<{ user: User }>('/api/auth/me');
+    return response.data.user;
+}
+
+// POST /api/auth/logout
+export async function logoutApi(): Promise<void> {
+    await apiClient.post('/api/auth/logout');
 }

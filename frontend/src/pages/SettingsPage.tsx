@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Settings, Target, Link2, RotateCcw, Save } from 'lucide-react';
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAppStore } from '@/stores/app/app.store';
 
 const DEFAULT_DSA_URL = 'https://neetcode.io/practice/practice/neetcode150';
 
@@ -11,22 +12,44 @@ export default function SettingsPage() {
     const { data: settings, isLoading } = useSettings();
     const { mutate: updateSettings, isPending } = useUpdateSettings();
 
-    const [weeklyTargetHours, setWeeklyTargetHours] = useState<number>(15);
-    const [dsaSheetUrl, setDsaSheetUrl] = useState<string>(DEFAULT_DSA_URL);
+    // ── Settings slice: form drafts survive navigation ─────────────────────
+    const weeklyTargetHoursDraft = useAppStore((s) => s.weeklyTargetHoursDraft);
+    const setWeeklyTargetHoursDraft = useAppStore((s) => s.setWeeklyTargetHoursDraft);
+    const dsaSheetUrlDraft = useAppStore((s) => s.dsaSheetUrlDraft);
+    const setDsaSheetUrlDraft = useAppStore((s) => s.setDsaSheetUrlDraft);
 
+    // Resolved display values: prefer in-progress draft, fall back to server data
+    const weeklyTargetHours = weeklyTargetHoursDraft ?? settings?.weekly_target_hours ?? 15;
+    const dsaSheetUrl = dsaSheetUrlDraft ?? settings?.dsa_sheet_url ?? DEFAULT_DSA_URL;
+
+    // Seed the draft fields once server data arrives (only if user hasn't touched them yet)
     useEffect(() => {
         if (settings) {
-            setWeeklyTargetHours(settings.weekly_target_hours ?? 15);
-            setDsaSheetUrl(settings.dsa_sheet_url ?? DEFAULT_DSA_URL);
+            if (weeklyTargetHoursDraft === null) {
+                setWeeklyTargetHoursDraft(settings.weekly_target_hours ?? 15);
+            }
+            if (dsaSheetUrlDraft === null) {
+                setDsaSheetUrlDraft(settings.dsa_sheet_url ?? DEFAULT_DSA_URL);
+            }
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [settings]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        updateSettings({
-            weekly_target_hours: Number(weeklyTargetHours),
-            dsa_sheet_url: dsaSheetUrl.trim(),
-        });
+        updateSettings(
+            {
+                weekly_target_hours: Number(weeklyTargetHours),
+                dsa_sheet_url: dsaSheetUrl.trim(),
+            },
+            {
+                onSuccess: () => {
+                    // Clear drafts — server now holds the canonical values
+                    setWeeklyTargetHoursDraft(null);
+                    setDsaSheetUrlDraft(null);
+                },
+            },
+        );
     };
 
     if (isLoading) {
@@ -47,7 +70,7 @@ export default function SettingsPage() {
                     <div>
                         <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-1 flex items-center gap-2">
                             <Settings className="w-6 h-6 text-primary" />
-                            <span>User Settings & Goal Preferences</span>
+                            <span>User Settings &amp; Goal Preferences</span>
                         </h2>
                         <p className="text-muted-foreground text-xs sm:text-sm">
                             Customize your weekly study target and external DSA problem sheet link.
@@ -80,7 +103,7 @@ export default function SettingsPage() {
                                 min="0.5"
                                 max="168"
                                 value={weeklyTargetHours}
-                                onChange={(e) => setWeeklyTargetHours(Number(e.target.value))}
+                                onChange={(e) => setWeeklyTargetHoursDraft(Number(e.target.value))}
                                 className="w-32 h-11 text-base font-bold text-foreground text-center"
                                 required
                             />
@@ -94,7 +117,7 @@ export default function SettingsPage() {
                                 <button
                                     key={hours}
                                     type="button"
-                                    onClick={() => setWeeklyTargetHours(hours)}
+                                    onClick={() => setWeeklyTargetHoursDraft(hours)}
                                     className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
                                         weeklyTargetHours === hours
                                             ? 'bg-primary text-primary-foreground border-primary'
@@ -127,7 +150,7 @@ export default function SettingsPage() {
                             type="button"
                             variant="ghost"
                             size="sm"
-                            onClick={() => setDsaSheetUrl(DEFAULT_DSA_URL)}
+                            onClick={() => setDsaSheetUrlDraft(DEFAULT_DSA_URL)}
                             className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
                         >
                             <RotateCcw className="w-3.5 h-3.5" />
@@ -142,7 +165,7 @@ export default function SettingsPage() {
                             type="url"
                             placeholder="https://..."
                             value={dsaSheetUrl}
-                            onChange={(e) => setDsaSheetUrl(e.target.value)}
+                            onChange={(e) => setDsaSheetUrlDraft(e.target.value)}
                             className="h-11 text-xs font-mono"
                             required
                         />

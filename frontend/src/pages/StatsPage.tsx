@@ -206,7 +206,7 @@ export default function StatsPage() {
                                         </td>
                                         <td className="py-3 px-3 text-right">
                                             <Link
-                                                to={`/app/topics/${topic.topic_id}`}
+                                                to={`/home/topics/${topic.topic_id}`}
                                                 className="inline-flex items-center gap-1 text-primary hover:underline text-[11px] font-semibold"
                                             >
                                                 <span>Studio</span>

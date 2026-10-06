@@ -1,7 +1,7 @@
 import { Clock, Plus, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTopicStudyLogs } from '@/hooks/useStudyLogs';
-import { useUIStore } from '@/stores/uiStore';
+import { useAppStore } from '@/stores/app/app.store';
 import type { StudyLog } from '@/lib/types';
 
 interface StudyLogTimelineProps {
@@ -11,7 +11,7 @@ interface StudyLogTimelineProps {
 export function StudyLogTimeline({ topicId }: StudyLogTimelineProps) {
     const { data: rawLogs = [], isLoading } = useTopicStudyLogs(topicId);
     const logs = Array.isArray(rawLogs) ? rawLogs : [];
-    const { openQuickLog } = useUIStore();
+    const openQuickLog = useAppStore((s) => s.openQuickLog);
 
     const totalMinutes = logs.reduce((acc: number, l: StudyLog) => acc + (l.minutes || 0), 0);
 

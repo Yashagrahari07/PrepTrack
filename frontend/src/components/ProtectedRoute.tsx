@@ -1,16 +1,15 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { getStoredToken } from '@/hooks/useAuth';
+import { useAuthStore } from '@/stores/auth/auth.store';
 
 /**
  * ProtectedRoute — wraps authenticated routes.
- * Checks for a stored JWT before rendering. If no token exists,
- * redirects to /login with the current location saved so we can
- * send the user back after login.
+ * Checks for authentication in Zustand auth store before rendering.
+ * If unauthenticated, redirects to /login.
  */
 export function ProtectedRoute() {
-    const token = getStoredToken();
+    const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-    if (!token) {
+    if (!isAuthenticated) {
         return <Navigate to="/login" replace />;
     }
 

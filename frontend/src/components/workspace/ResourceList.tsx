@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
     ExternalLink,
@@ -73,9 +73,20 @@ export function ResourceList({ topicId }: ResourceListProps) {
     const [type, setType] = useState<ResourceType>('DEV_BLOG');
     const [estMinutes, setEstMinutes] = useState(30);
 
+    // Handle Escape key
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && isAddModalOpen && !isCreating) {
+                setIsAddModalOpen(false);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isAddModalOpen, isCreating]);
+
     const handleAddSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!title.trim() || !url.trim()) return;
+        if (!title.trim() || !url.trim() || isCreating) return;
 
         createResource(
             { type, title: title.trim(), url: url.trim(), est_minutes: estMinutes },
@@ -191,12 +202,14 @@ export function ResourceList({ topicId }: ResourceListProps) {
                 </div>
             )}
 
-            {/* Modal to attach resource - Portaled directly to document.body */}
+            {/* Modal to attach resource */}
             {isAddModalOpen &&
                 createPortal(
                     <div
                         className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in"
-                        onClick={() => setIsAddModalOpen(false)}
+                        onClick={() => {
+                            if (!isCreating) setIsAddModalOpen(false);
+                        }}
                     >
                         <div
                             className="relative w-full max-w-md bg-card border border-border shadow-2xl rounded-3xl p-6 animate-fade-up"
@@ -207,7 +220,9 @@ export function ResourceList({ topicId }: ResourceListProps) {
                                 <button
                                     type="button"
                                     onClick={() => setIsAddModalOpen(false)}
-                                    className="text-muted-foreground hover:text-foreground p-1 rounded-lg transition-colors"
+                                    disabled={isCreating}
+                                    className="text-muted-foreground hover:text-foreground p-1 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Close"
                                 >
                                     <X className="w-5 h-5" />
                                 </button>
@@ -220,7 +235,8 @@ export function ResourceList({ topicId }: ResourceListProps) {
                                         id="res-type"
                                         value={type}
                                         onChange={(e) => setType(e.target.value as ResourceType)}
-                                        className="h-10 rounded-xl border border-border bg-input/30 px-3 text-xs text-foreground"
+                                        disabled={isCreating}
+                                        className="h-10 rounded-xl border border-border bg-input/30 px-3 text-xs text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         <option value="YOUTUBE_VIDEO">YouTube Video</option>
                                         <option value="YOUTUBE_PLAYLIST">YouTube Playlist</option>
@@ -237,6 +253,7 @@ export function ResourceList({ topicId }: ResourceListProps) {
                                         placeholder="e.g. Postgres Indexing Deep Dive"
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
+                                        disabled={isCreating}
                                         required
                                     />
                                 </div>
@@ -249,6 +266,7 @@ export function ResourceList({ topicId }: ResourceListProps) {
                                         placeholder="https://..."
                                         value={url}
                                         onChange={(e) => setUrl(e.target.value)}
+                                        disabled={isCreating}
                                         required
                                     />
                                 </div>
@@ -262,6 +280,7 @@ export function ResourceList({ topicId }: ResourceListProps) {
                                         max={600}
                                         value={estMinutes}
                                         onChange={(e) => setEstMinutes(Number(e.target.value))}
+                                        disabled={isCreating}
                                     />
                                 </div>
 
@@ -269,11 +288,12 @@ export function ResourceList({ topicId }: ResourceListProps) {
                                     <Button
                                         type="button"
                                         variant="ghost"
+                                        disabled={isCreating}
                                         onClick={() => setIsAddModalOpen(false)}
                                     >
                                         Cancel
                                     </Button>
-                                    <Button type="submit" isLoading={isCreating}>
+                                    <Button type="submit" isLoading={isCreating} loadingText="Attaching...">
                                         Attach
                                     </Button>
                                 </div>

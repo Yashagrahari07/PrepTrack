@@ -52,10 +52,12 @@ func main() {
 	authGroup := e.Group("/api/auth", middleware.AuthRateLimiter())
 	authGroup.POST("/signup", authH.Signup)
 	authGroup.POST("/login", authH.Login)
+	authGroup.POST("/logout", authH.Logout)
 
 	// Protected API group (JWT required)
 	api := e.Group("/api", middleware.JWT(cfg))
 	api.GET("/auth/me", authH.Me)
+	api.POST("/auth/logout", authH.Logout)
 
 	// User Settings routes
 	api.GET("/settings", settingsH.Get)

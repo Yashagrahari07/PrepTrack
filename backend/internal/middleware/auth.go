@@ -12,20 +12,32 @@ import (
 
 const UserIDContextKey = "user_id"
 
-// JWT returns a middleware that validates JWT Bearer tokens in the Authorization header
+// JWT returns a middleware that validates JWT tokens in HttpOnly cookies or Authorization header
 func JWT(cfg *config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			header := c.Request().Header.Get("Authorization")
-			if !strings.HasPrefix(header, "Bearer ") {
+			var tokenStr string
+
+			// 1. Try extracting token from HttpOnly cookie
+			cookie, err := c.Cookie("token")
+			if err == nil && cookie.Value != "" {
+				tokenStr = cookie.Value
+			} else {
+				// 2. Fallback to Authorization: Bearer <token> header
+				header := c.Request().Header.Get("Authorization")
+				if strings.HasPrefix(header, "Bearer ") {
+					tokenStr = strings.TrimPrefix(header, "Bearer ")
+				}
+			}
+
+			if tokenStr == "" {
 				return c.JSON(http.StatusUnauthorized, model.ErrorResponse{
 					Error: model.ErrorDetail{
 						Code:    "MISSING_TOKEN",
-						Message: "Missing or invalid authorization header",
+						Message: "Missing or invalid authorization token",
 					},
 				})
 			}
-			tokenStr := strings.TrimPrefix(header, "Bearer ")
 
 			token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
 				if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {

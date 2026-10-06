@@ -67,7 +67,7 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <Link to="/app/curriculum">
+                        <Link to="/home/curriculum">
                             <Button size="sm" className="gap-2 shadow-lg shadow-primary/20">
                                 <BookOpen className="w-4 h-4" />
                                 <span>Curriculum</span>
@@ -131,7 +131,7 @@ export default function DashboardPage() {
 
                 {/* Revisions Due Alert */}
                 <Link
-                    to="/app/revisions"
+                    to="/home/revisions"
                     className="glass-panel rounded-2xl p-5 flex flex-col justify-between gap-3 border border-white/10 hover:border-rose-500/30 transition-all group"
                 >
                     <div className="flex items-center justify-between">
@@ -208,7 +208,7 @@ export default function DashboardPage() {
                                 </div>
                             </div>
 
-                            <Link to={`/app/topics/${focusTopic.id}`}>
+                            <Link to={`/home/topics/${focusTopic.id}`}>
                                 <Button size="sm" className="gap-2 shrink-0">
                                     <span>Study Topic</span>
                                     <ArrowRight className="w-3.5 h-3.5" />
@@ -240,7 +240,7 @@ export default function DashboardPage() {
                         </p>
                     </div>
 
-                    <Link to="/app/revisions">
+                    <Link to="/home/revisions">
                         <Button
                             variant={revisionsDueCount > 0 ? 'default' : 'outline'}
                             className="w-full justify-between gap-2"
@@ -300,7 +300,7 @@ export default function DashboardPage() {
                         <p className="text-xs text-muted-foreground">Breakdown of topic states by domain</p>
                     </div>
 
-                    <Link to="/app/curriculum" className="text-xs text-primary font-semibold hover:underline">
+                    <Link to="/home/curriculum" className="text-xs text-primary font-semibold hover:underline">
                         Manage Domains &rarr;
                     </Link>
                 </div>
@@ -318,7 +318,7 @@ export default function DashboardPage() {
                             return (
                                 <Link
                                     key={cat.category_id}
-                                    to="/app/curriculum"
+                                    to="/home/curriculum"
                                     className="rounded-2xl bg-card/60 border border-border p-4 flex flex-col gap-3 hover:border-primary/50 hover:bg-card/90 transition-all group"
                                 >
                                     <div className="flex items-center justify-between">

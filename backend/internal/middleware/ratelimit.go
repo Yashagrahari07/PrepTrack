@@ -6,7 +6,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 	echomw "github.com/labstack/echo/v4/middleware"
-	"github.com/yash/preptrack-backend/internal/model"
 )
 
 // AuthRateLimiter limits sensitive auth operations (signup, login) to 10 requests per minute per IP
@@ -24,18 +23,22 @@ func AuthRateLimiter() echo.MiddlewareFunc {
 			return ctx.RealIP(), nil
 		},
 		ErrorHandler: func(ctx echo.Context, err error) error {
-			return ctx.JSON(http.StatusTooManyRequests, model.ErrorResponse{
-				Error: model.ErrorDetail{
-					Code:    "RATE_LIMIT_EXCEEDED",
-					Message: "Too many authentication requests. Please try again in a few minutes.",
+			ctx.Response().Header().Set("Retry-After", "60")
+			return ctx.JSON(http.StatusTooManyRequests, map[string]interface{}{
+				"error": map[string]interface{}{
+					"code":       "RATE_LIMIT_EXCEEDED",
+					"message":    "Too many requests. Please try again in 60 seconds.",
+					"retryAfter": 60,
 				},
 			})
 		},
 		DenyHandler: func(ctx echo.Context, identifier string, err error) error {
-			return ctx.JSON(http.StatusTooManyRequests, model.ErrorResponse{
-				Error: model.ErrorDetail{
-					Code:    "RATE_LIMIT_EXCEEDED",
-					Message: "Too many authentication requests. Please try again in a few minutes.",
+			ctx.Response().Header().Set("Retry-After", "60")
+			return ctx.JSON(http.StatusTooManyRequests, map[string]interface{}{
+				"error": map[string]interface{}{
+					"code":       "RATE_LIMIT_EXCEEDED",
+					"message":    "Too many requests. Please try again in 60 seconds.",
+					"retryAfter": 60,
 				},
 			})
 		},

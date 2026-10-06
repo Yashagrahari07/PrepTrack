@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Search, Plus, BookOpen, Sparkles, FolderPlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,21 +6,29 @@ import { CategoryTabList } from '@/components/curriculum/CategoryTabList';
 import { TopicTreeCard } from '@/components/curriculum/TopicTreeCard';
 import { TopicFormModal } from '@/components/curriculum/TopicFormModal';
 import { CategoryFormModal } from '@/components/curriculum/CategoryFormModal';
-import type { Topic } from '@/lib/types';
+import { useAppStore } from '@/stores/app/app.store';
 
 export default function CurriculumPage() {
     const { data: rawCategories, isLoading: isLoadingCategories } = useCategories();
     const categories = Array.isArray(rawCategories) ? rawCategories : [];
 
-    const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-    const [searchQuery, setSearchQuery] = useState('');
+    // ── Curriculum slice ───────────────────────────────────────────────────
+    const selectedCategoryId = useAppStore((s) => s.selectedCategoryId);
+    const setSelectedCategoryId = useAppStore((s) => s.setSelectedCategoryId);
+    const curriculumSearch = useAppStore((s) => s.curriculumSearch);
+    const setCurriculumSearch = useAppStore((s) => s.setCurriculumSearch);
 
-    // Topic Modal state
-    const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-    const [parentTopicForSubtopic, setParentTopicForSubtopic] = useState<Topic | null>(null);
+    // ── UI slice – Topic modal ─────────────────────────────────────────────
+    const isTopicModalOpen = useAppStore((s) => s.isTopicModalOpen);
+    const topicModalParent = useAppStore((s) => s.topicModalParent);
+    const topicModalCategoryId = useAppStore((s) => s.topicModalCategoryId);
+    const openTopicModal = useAppStore((s) => s.openTopicModal);
+    const closeTopicModal = useAppStore((s) => s.closeTopicModal);
 
-    // Category Modal state
-    const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+    // ── UI slice – Category modal ──────────────────────────────────────────
+    const isCategoryModalOpen = useAppStore((s) => s.isCategoryModalOpen);
+    const openCategoryModal = useAppStore((s) => s.openCategoryModal);
+    const closeCategoryModal = useAppStore((s) => s.closeCategoryModal);
 
     // Default to first category if none selected
     const activeCategory =
@@ -33,17 +40,15 @@ export default function CurriculumPage() {
 
     // Filter topics by title
     const filteredTopics = topics.filter((t) =>
-        t.title.toLowerCase().includes(searchQuery.toLowerCase()),
+        t.title.toLowerCase().includes(curriculumSearch.toLowerCase()),
     );
 
     const handleOpenCreateTopic = () => {
-        setParentTopicForSubtopic(null);
-        setIsFormModalOpen(true);
+        openTopicModal({ categoryId: activeCategoryId ?? undefined });
     };
 
-    const handleOpenAddSubtopic = (parent: Topic) => {
-        setParentTopicForSubtopic(parent);
-        setIsFormModalOpen(true);
+    const handleOpenAddSubtopic = (parent: import('@/lib/types').Topic) => {
+        openTopicModal({ parentTopic: parent });
     };
 
     return (
@@ -67,7 +72,7 @@ export default function CurriculumPage() {
                 <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
                     <Button
                         variant="outline"
-                        onClick={() => setIsCategoryModalOpen(true)}
+                        onClick={openCategoryModal}
                         className="gap-1.5 text-xs"
                     >
                         <FolderPlus className="w-4 h-4 text-primary" />
@@ -93,7 +98,7 @@ export default function CurriculumPage() {
                     categories={categories}
                     selectedCategoryId={selectedCategoryId}
                     onSelectCategory={(id) => setSelectedCategoryId(id)}
-                    onAddCategory={() => setIsCategoryModalOpen(true)}
+                    onAddCategory={openCategoryModal}
                 />
             )}
 
@@ -103,14 +108,14 @@ export default function CurriculumPage() {
                     <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         placeholder="Search topics in this domain..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        value={curriculumSearch}
+                        onChange={(e) => setCurriculumSearch(e.target.value)}
                         className="pl-10 pr-9 h-10 text-xs sm:text-sm bg-card/60"
                     />
-                    {searchQuery && (
+                    {curriculumSearch && (
                         <button
                             type="button"
-                            onClick={() => setSearchQuery('')}
+                            onClick={() => setCurriculumSearch('')}
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-md transition-colors"
                             title="Clear search"
                         >
@@ -138,8 +143,8 @@ export default function CurriculumPage() {
                     </div>
                     <h3 className="font-semibold text-foreground text-base">No topics found</h3>
                     <p className="text-xs text-muted-foreground max-w-sm">
-                        {searchQuery
-                            ? `No topics match "${searchQuery}" in this category.`
+                        {curriculumSearch
+                            ? `No topics match "${curriculumSearch}" in this category.`
                             : 'This domain has no topics yet. Click "Add Topic" to build your curriculum.'}
                     </p>
                     <Button size="sm" onClick={handleOpenCreateTopic} className="mt-2 gap-1.5">
@@ -162,20 +167,17 @@ export default function CurriculumPage() {
 
             {/* Create Topic / Subtopic Modal */}
             <TopicFormModal
-                isOpen={isFormModalOpen}
-                onClose={() => {
-                    setIsFormModalOpen(false);
-                    setParentTopicForSubtopic(null);
-                }}
+                isOpen={isTopicModalOpen}
+                onClose={closeTopicModal}
                 categories={categories}
-                defaultCategoryId={activeCategoryId}
-                parentTopic={parentTopicForSubtopic}
+                defaultCategoryId={topicModalCategoryId ?? activeCategoryId}
+                parentTopic={topicModalParent}
             />
 
             {/* Create Category / Domain Modal */}
             <CategoryFormModal
                 isOpen={isCategoryModalOpen}
-                onClose={() => setIsCategoryModalOpen(false)}
+                onClose={closeCategoryModal}
             />
         </div>
     );

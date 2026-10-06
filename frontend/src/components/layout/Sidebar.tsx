@@ -10,7 +10,7 @@ import {
     X,
 } from 'lucide-react';
 import { useCurrentUser, useLogout } from '@/hooks/useAuth';
-import { useUIStore } from '@/stores/uiStore';
+import { useAppStore } from '@/stores/app/app.store';
 import { cn } from '@/lib/utils';
 
 interface NavItemProps {
@@ -43,16 +43,17 @@ export function Sidebar() {
     const location = useLocation();
     const { data: user } = useCurrentUser();
     const logout = useLogout();
-    const { isSidebarOpen, setSidebarOpen } = useUIStore();
+    const isSidebarOpen = useAppStore((s) => s.isSidebarOpen);
+    const setSidebarOpen = useAppStore((s) => s.setSidebarOpen);
 
     const currentPath = location.pathname;
 
     const navItems = [
-        { label: 'Dashboard', to: '/app', icon: <BarChart3 className="w-4 h-4" /> },
-        { label: 'Curriculum', to: '/app/curriculum', icon: <BookOpen className="w-4 h-4" /> },
-        { label: 'Revisions', to: '/app/revisions', icon: <RotateCcw className="w-4 h-4" /> },
-        { label: 'Stats Hub', to: '/app/stats', icon: <TrendingUp className="w-4 h-4" /> },
-        { label: 'Settings', to: '/app/settings', icon: <Settings className="w-4 h-4" /> },
+        { label: 'Dashboard', to: '/home', icon: <BarChart3 className="w-4 h-4" /> },
+        { label: 'Curriculum', to: '/home/curriculum', icon: <BookOpen className="w-4 h-4" /> },
+        { label: 'Revisions', to: '/home/revisions', icon: <RotateCcw className="w-4 h-4" /> },
+        { label: 'Stats Hub', to: '/home/stats', icon: <TrendingUp className="w-4 h-4" /> },
+        { label: 'Settings', to: '/home/settings', icon: <Settings className="w-4 h-4" /> },
     ];
 
     return (
@@ -75,7 +76,7 @@ export function Sidebar() {
             >
                 {/* Logo & Close button */}
                 <div className="flex items-center justify-between px-5 py-5 border-b border-border">
-                    <Link to="/app" className="flex items-center gap-2.5">
+                    <Link to="/home" className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
                             <Target className="w-4 h-4 text-primary-foreground" />
                         </div>
@@ -100,8 +101,8 @@ export function Sidebar() {
 
                     {navItems.map((item) => {
                         const isActive =
-                            item.to === '/app'
-                                ? currentPath === '/app'
+                            item.to === '/home'
+                                ? currentPath === '/home'
                                 : currentPath.startsWith(item.to);
                         return (
                             <NavItem

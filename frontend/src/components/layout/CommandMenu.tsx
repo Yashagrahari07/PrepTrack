@@ -13,13 +13,18 @@ import {
     Moon,
     X,
 } from 'lucide-react';
-import { useUIStore } from '@/stores/uiStore';
+import { useAppStore } from '@/stores/app/app.store';
 import { useCategories } from '@/hooks/useCurriculum';
 import { useSettings } from '@/hooks/useSettings';
 
 export function CommandMenu() {
     const navigate = useNavigate();
-    const { isCommandMenuOpen, closeCommandMenu, openQuickLog, toggleTheme, theme } = useUIStore();
+    const isCommandMenuOpen = useAppStore((s) => s.isCommandMenuOpen);
+    const closeCommandMenu = useAppStore((s) => s.closeCommandMenu);
+    const openCommandMenu = useAppStore((s) => s.openCommandMenu);
+    const openQuickLog = useAppStore((s) => s.openQuickLog);
+    const toggleTheme = useAppStore((s) => s.toggleTheme);
+    const theme = useAppStore((s) => s.theme);
     const { data: categoriesData } = useCategories();
     const { data: userSettings } = useSettings();
 
@@ -33,7 +38,7 @@ export function CommandMenu() {
                 if (isCommandMenuOpen) {
                     closeCommandMenu();
                 } else {
-                    useUIStore.getState().openCommandMenu();
+                    openCommandMenu();
                 }
             }
             if (e.key === 'Escape' && isCommandMenuOpen) {
@@ -56,11 +61,11 @@ export function CommandMenu() {
     const dsaUrl = userSettings?.dsa_sheet_url || 'https://leetcode.com';
 
     const navigationItems = [
-        { label: 'Dashboard Overview', path: '/app', icon: <BarChart3 className="w-4 h-4 text-primary" /> },
-        { label: 'Curriculum Tree', path: '/app/curriculum', icon: <BookOpen className="w-4 h-4 text-emerald-400" /> },
-        { label: 'Spaced Revisions', path: '/app/revisions', icon: <RotateCcw className="w-4 h-4 text-rose-400" /> },
-        { label: 'Stats Hub & Analytics', path: '/app/stats', icon: <TrendingUp className="w-4 h-4 text-violet-400" /> },
-        { label: 'User Settings', path: '/app/settings', icon: <Settings className="w-4 h-4 text-amber-400" /> },
+        { label: 'Dashboard Overview', path: '/home', icon: <BarChart3 className="w-4 h-4 text-primary" /> },
+        { label: 'Curriculum Tree', path: '/home/curriculum', icon: <BookOpen className="w-4 h-4 text-emerald-400" /> },
+        { label: 'Spaced Revisions', path: '/home/revisions', icon: <RotateCcw className="w-4 h-4 text-rose-400" /> },
+        { label: 'Stats Hub & Analytics', path: '/home/stats', icon: <TrendingUp className="w-4 h-4 text-violet-400" /> },
+        { label: 'User Settings', path: '/home/settings', icon: <Settings className="w-4 h-4 text-amber-400" /> },
     ];
 
     const filteredNav = navigationItems.filter((item) =>
@@ -133,7 +138,7 @@ export function CommandMenu() {
                                 {filteredCategories.map((cat) => (
                                     <button
                                         key={cat.id}
-                                        onClick={() => handleNavigate(`/app/curriculum`)}
+                                        onClick={() => handleNavigate(`/home/curriculum`)}
                                         className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-foreground hover:bg-muted/60 transition-colors text-left"
                                     >
                                         <div

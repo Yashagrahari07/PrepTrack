@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
     ChevronDown,
@@ -15,7 +14,7 @@ import {
     ExternalLink,
 } from 'lucide-react';
 import { useUpdateTopic, useDeleteTopic } from '@/hooks/useCurriculum';
-import { useUIStore } from '@/stores/uiStore';
+import { useAppStore } from '@/stores/app/app.store';
 import type { Topic, TopicStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -53,10 +52,14 @@ const statusBadgeStyles: Record<TopicStatus, { label: string; bg: string; text: 
 };
 
 export function TopicTreeCard({ topic, categoryColor = '#6366f1', onAddSubtopic }: TopicTreeCardProps) {
-    const [isExpanded, setIsExpanded] = useState(true);
     const { mutate: updateTopic } = useUpdateTopic();
     const { mutate: deleteTopic } = useDeleteTopic();
-    const { openQuickLog } = useUIStore();
+    const openQuickLog = useAppStore((s) => s.openQuickLog);
+
+    // ── Curriculum slice: persist expanded state globally ─────────────────
+    const expandedTopicIds = useAppStore((s) => s.expandedTopicIds);
+    const toggleTopicExpanded = useAppStore((s) => s.toggleTopicExpanded);
+    const isExpanded = expandedTopicIds.includes(topic.id);
 
     const subtopics = topic.subtopics || [];
 
@@ -85,7 +88,7 @@ export function TopicTreeCard({ topic, categoryColor = '#6366f1', onAddSubtopic 
                     {subtopics.length > 0 && (
                         <button
                             type="button"
-                            onClick={() => setIsExpanded((prev) => !prev)}
+                            onClick={() => toggleTopicExpanded(topic.id)}
                             className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors mt-0.5 shrink-0"
                             aria-label="Expand or collapse subtopics"
                         >
@@ -104,7 +107,7 @@ export function TopicTreeCard({ topic, categoryColor = '#6366f1', onAddSubtopic 
                                 style={{ backgroundColor: categoryColor }}
                             />
                             <Link
-                                to={`/app/topics/${topic.id}`}
+                                to={`/home/topics/${topic.id}`}
                                 className="font-semibold text-foreground text-sm sm:text-base hover:text-primary transition-colors truncate flex items-center gap-1.5"
                                 title="Click to open Topic Studio (Resources & Notes)"
                             >
@@ -115,7 +118,7 @@ export function TopicTreeCard({ topic, categoryColor = '#6366f1', onAddSubtopic 
                         {/* Metadata row */}
                         <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                             <Link
-                                to={`/app/topics/${topic.id}`}
+                                to={`/home/topics/${topic.id}`}
                                 className="flex items-center gap-1 hover:text-primary transition-colors"
                                 title="Attached Resources"
                             >
@@ -152,7 +155,7 @@ export function TopicTreeCard({ topic, categoryColor = '#6366f1', onAddSubtopic 
                 <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
                     {/* Open Workspace Studio Button */}
                     <Link
-                        to={`/app/topics/${topic.id}`}
+                        to={`/home/topics/${topic.id}`}
                         className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-medium border border-primary/20 transition-all"
                         title="Open Topic Studio to attach resources, write markdown notes, & view logs"
                     >
@@ -221,7 +224,7 @@ export function TopicTreeCard({ topic, categoryColor = '#6366f1', onAddSubtopic 
                                 <div className="flex items-center gap-2 min-w-0">
                                     <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 shrink-0" />
                                     <Link
-                                        to={`/app/topics/${sub.id}`}
+                                        to={`/home/topics/${sub.id}`}
                                         className="text-xs font-medium text-foreground hover:text-primary transition-colors truncate"
                                         title="Open Subtopic Studio (Resources & Notes)"
                                     >
@@ -231,7 +234,7 @@ export function TopicTreeCard({ topic, categoryColor = '#6366f1', onAddSubtopic 
 
                                 <div className="flex items-center gap-2 shrink-0">
                                     <Link
-                                        to={`/app/topics/${sub.id}`}
+                                        to={`/home/topics/${sub.id}`}
                                         className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors px-1.5 py-0.5 rounded bg-muted/40"
                                         title="Open Subtopic Studio"
                                     >

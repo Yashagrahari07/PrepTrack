@@ -37,11 +37,28 @@ export function TopicFormModal({
         }
     }, [defaultCategoryId, parentTopic, categories, categoryId]);
 
+    // Handle Escape key
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && isOpen && !isPending) {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, isPending, onClose]);
+
     if (!isOpen) return null;
+
+    const handleBackdropClick = () => {
+        if (!isPending) {
+            onClose();
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!title.trim() || !categoryId) return;
+        if (!title.trim() || !categoryId || isPending) return;
 
         createTopic(
             {
@@ -61,7 +78,7 @@ export function TopicFormModal({
     return createPortal(
         <div
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in"
-            onClick={onClose}
+            onClick={handleBackdropClick}
         >
             <div
                 className="relative w-full max-w-md bg-card border border-border rounded-3xl p-6 shadow-2xl animate-fade-up"
@@ -78,7 +95,9 @@ export function TopicFormModal({
                     </div>
                     <button
                         onClick={onClose}
-                        className="text-muted-foreground hover:text-foreground p-1 rounded-lg"
+                        disabled={isPending}
+                        className="text-muted-foreground hover:text-foreground p-1 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        title="Close"
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -92,7 +111,8 @@ export function TopicFormModal({
                                 id="category"
                                 value={categoryId}
                                 onChange={(e) => setCategoryId(e.target.value)}
-                                className="h-11 w-full rounded-xl border border-border bg-input/30 px-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
+                                disabled={isPending}
+                                className="h-11 w-full rounded-xl border border-border bg-input/30 px-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 disabled:opacity-50 disabled:cursor-not-allowed"
                                 required
                             >
                                 {categories.map((cat) => (
@@ -111,12 +131,19 @@ export function TopicFormModal({
                             placeholder="e.g. Distributed Lock Manager (DLM)"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
+                            disabled={isPending}
                             required
                             autoFocus
                         />
                     </div>
 
-                    <Button type="submit" size="lg" isLoading={isPending} className="mt-2">
+                    <Button
+                        type="submit"
+                        size="lg"
+                        isLoading={isPending}
+                        loadingText={parentTopic ? 'Adding Subtopic...' : 'Creating Topic...'}
+                        className="mt-2"
+                    >
                         Create {parentTopic ? 'Subtopic' : 'Topic'}
                     </Button>
                 </form>

@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, type ReactNode } from 'react';
-import { useUIStore } from '@/stores/uiStore';
+import { useAppStore } from '@/stores/app/app.store';
 
 interface ThemeContextValue {
     theme: 'dark' | 'light';
@@ -9,7 +9,8 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-    const { theme, toggleTheme } = useUIStore();
+    const theme = useAppStore((s) => s.theme);
+    const toggleTheme = useAppStore((s) => s.toggleTheme);
 
     // Apply the theme class to <html> element
     useEffect(() => {

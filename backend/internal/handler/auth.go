@@ -101,6 +101,8 @@ func (h *AuthHandler) Signup(c echo.Context) error {
 		return sendError(c, http.StatusInternalServerError, "TOKEN_GENERATION_FAILED", "Failed to generate authentication token")
 	}
 
+	h.setAuthCookie(c, tokenStr)
+
 	return c.JSON(http.StatusCreated, model.AuthResponse{
 		Token: tokenStr,
 		User:  user,
@@ -146,9 +148,34 @@ func (h *AuthHandler) Login(c echo.Context) error {
 		return sendError(c, http.StatusInternalServerError, "TOKEN_GENERATION_FAILED", "Failed to generate authentication token")
 	}
 
+	h.setAuthCookie(c, tokenStr)
+
 	return c.JSON(http.StatusOK, model.AuthResponse{
 		Token: tokenStr,
 		User:  user,
+	})
+}
+
+// Logout clears the authentication HttpOnly cookie
+func (h *AuthHandler) Logout(c echo.Context) error {
+	cookie := &http.Cookie{
+		Name:     "token",
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Unix(0, 0),
+		MaxAge:   -1,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	}
+
+	if h.cfg.AppEnv == "production" {
+		cookie.Secure = true
+		cookie.SameSite = http.SameSiteNoneMode
+	}
+
+	c.SetCookie(cookie)
+	return c.JSON(http.StatusOK, map[string]string{
+		"message": "Logged out successfully",
 	})
 }
 
@@ -177,6 +204,24 @@ func (h *AuthHandler) Me(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"user": user,
 	})
+}
+
+func (h *AuthHandler) setAuthCookie(c echo.Context, tokenStr string) {
+	cookie := &http.Cookie{
+		Name:     "token",
+		Value:    tokenStr,
+		Path:     "/",
+		Expires:  time.Now().Add(time.Duration(h.cfg.JWTExpiryHrs) * time.Hour),
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	}
+
+	if h.cfg.AppEnv == "production" {
+		cookie.Secure = true
+		cookie.SameSite = http.SameSiteNoneMode
+	}
+
+	c.SetCookie(cookie)
 }
 
 func (h *AuthHandler) generateJWT(userID, email string) (string, error) {

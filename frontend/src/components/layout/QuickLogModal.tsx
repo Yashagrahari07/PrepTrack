@@ -4,13 +4,15 @@ import { Clock, Search, X, Check, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useUIStore } from '@/stores/uiStore';
+import { useAppStore } from '@/stores/app/app.store';
 import { useCategories, useCategoryTopics } from '@/hooks/useCurriculum';
 import { useCreateStudyLog } from '@/hooks/useStudyLogs';
 import type { Topic } from '@/lib/types';
 
 export function QuickLogModal() {
-    const { isQuickLogOpen, activeTopicId, closeQuickLog } = useUIStore();
+    const isQuickLogOpen = useAppStore((s) => s.isQuickLogOpen);
+    const activeTopicId = useAppStore((s) => s.quickLogTopicId);
+    const closeQuickLog = useAppStore((s) => s.closeQuickLog);
     const { data: rawCategories } = useCategories();
     const { mutate: logStudyTime, isPending } = useCreateStudyLog();
 
@@ -31,6 +33,17 @@ export function QuickLogModal() {
         }
     }, [activeTopicId, categories, selectedCategoryId]);
 
+    // Handle Escape key
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && isQuickLogOpen && !isPending) {
+                closeQuickLog();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isQuickLogOpen, isPending, closeQuickLog]);
+
     const { data: rawCategoryTopics } = useCategoryTopics(selectedCategoryId);
     const categoryTopics = Array.isArray(rawCategoryTopics) ? rawCategoryTopics : [];
 
@@ -41,9 +54,15 @@ export function QuickLogModal() {
 
     if (!isQuickLogOpen) return null;
 
+    const handleBackdropClick = () => {
+        if (!isPending) {
+            closeQuickLog();
+        }
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!selectedTopicId || minutes <= 0) return;
+        if (!selectedTopicId || minutes <= 0 || isPending) return;
 
         logStudyTime(
             { topic_id: selectedTopicId, minutes: Number(minutes), comment: comment || undefined },
@@ -59,7 +78,7 @@ export function QuickLogModal() {
     return createPortal(
         <div
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in"
-            onClick={closeQuickLog}
+            onClick={handleBackdropClick}
         >
             <div
                 className="relative w-full max-w-lg bg-card border border-border rounded-3xl p-6 sm:p-8 shadow-2xl animate-fade-up"
@@ -78,7 +97,9 @@ export function QuickLogModal() {
                     </div>
                     <button
                         onClick={closeQuickLog}
-                        className="text-muted-foreground hover:text-foreground p-1 rounded-lg transition-colors"
+                        disabled={isPending}
+                        className="text-muted-foreground hover:text-foreground p-1 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Close"
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -93,6 +114,7 @@ export function QuickLogModal() {
                                 <button
                                     key={cat.id}
                                     type="button"
+                                    disabled={isPending}
                                     onClick={() => {
                                         setSelectedCategoryId(cat.id);
                                         setSelectedTopicId(null);
@@ -101,7 +123,7 @@ export function QuickLogModal() {
                                         selectedCategoryId === cat.id
                                             ? 'bg-primary text-primary-foreground shadow-sm'
                                             : 'bg-muted/40 text-muted-foreground hover:text-foreground'
-                                    }`}
+                                    } disabled:opacity-50 disabled:cursor-not-allowed`}
                                 >
                                     {cat.name}
                                 </button>
@@ -124,6 +146,7 @@ export function QuickLogModal() {
                                 placeholder="Search topic..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
+                                disabled={isPending}
                                 className="pl-9 h-9 text-xs"
                             />
                         </div>
@@ -140,12 +163,13 @@ export function QuickLogModal() {
                                         <button
                                             key={topic.id}
                                             type="button"
+                                            disabled={isPending}
                                             onClick={() => setSelectedTopicId(topic.id)}
                                             className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors text-left ${
                                                 isSelected
                                                     ? 'bg-primary/20 text-primary font-semibold border border-primary/30'
                                                     : 'text-foreground hover:bg-muted/60'
-                                            }`}
+                                            } disabled:opacity-50 disabled:cursor-not-allowed`}
                                         >
                                             <span className="truncate">{topic.title}</span>
                                             {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
@@ -164,12 +188,13 @@ export function QuickLogModal() {
                                 <button
                                     key={mins}
                                     type="button"
+                                    disabled={isPending}
                                     onClick={() => setMinutes(mins)}
                                     className={`py-2 rounded-xl text-xs font-semibold border transition-all ${
                                         minutes === mins
                                             ? 'bg-primary text-primary-foreground border-primary'
                                             : 'bg-muted/30 border-border text-muted-foreground hover:text-foreground'
-                                    }`}
+                                    } disabled:opacity-50 disabled:cursor-not-allowed`}
                                 >
                                     {mins}m
                                 </button>
@@ -182,6 +207,7 @@ export function QuickLogModal() {
                             max={600}
                             value={minutes}
                             onChange={(e) => setMinutes(Number(e.target.value))}
+                            disabled={isPending}
                             required
                         />
                     </div>
@@ -194,6 +220,7 @@ export function QuickLogModal() {
                             placeholder="e.g. Understood B+ Tree node splitting and page layouts."
                             value={comment}
                             onChange={(e) => setComment(e.target.value)}
+                            disabled={isPending}
                         />
                     </div>
 
@@ -202,6 +229,7 @@ export function QuickLogModal() {
                         type="submit"
                         size="lg"
                         isLoading={isPending}
+                        loadingText="Logging Time..."
                         disabled={!selectedTopicId || minutes <= 0}
                         className="mt-2"
                     >

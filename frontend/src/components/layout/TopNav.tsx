@@ -10,21 +10,25 @@ import {
     Menu,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useUIStore } from '@/stores/uiStore';
+import { useAppStore } from '@/stores/app/app.store';
 import { useSettings } from '@/hooks/useSettings';
 
 export function TopNav() {
     const location = useLocation();
-    const { toggleSidebar, theme, toggleTheme, openQuickLog, openCommandMenu } = useUIStore();
+    const toggleSidebar = useAppStore((s) => s.toggleSidebar);
+    const theme = useAppStore((s) => s.theme);
+    const toggleTheme = useAppStore((s) => s.toggleTheme);
+    const openQuickLog = useAppStore((s) => s.openQuickLog);
+    const openCommandMenu = useAppStore((s) => s.openCommandMenu);
     const { data: settings } = useSettings();
 
     const getPageTitle = (path: string) => {
-        if (path === '/app') return 'Dashboard';
-        if (path.startsWith('/app/curriculum')) return 'Curriculum';
-        if (path.startsWith('/app/revisions')) return 'Spaced Revisions';
-        if (path.startsWith('/app/stats')) return 'Stats Hub';
-        if (path.startsWith('/app/settings')) return 'Settings';
-        if (path.startsWith('/app/topics')) return 'Topic Workspace';
+        if (path === '/home') return 'Dashboard';
+        if (path.startsWith('/home/curriculum')) return 'Curriculum';
+        if (path.startsWith('/home/revisions')) return 'Spaced Revisions';
+        if (path.startsWith('/home/stats')) return 'Stats Hub';
+        if (path.startsWith('/home/settings')) return 'Settings';
+        if (path.startsWith('/home/topics')) return 'Topic Workspace';
         return 'Control Center';
     };
 
@@ -72,7 +76,7 @@ export function TopNav() {
 
                 {/* Revisions Link Badge */}
                 <Link
-                    to="/app/revisions"
+                    to="/home/revisions"
                     className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/10 text-rose-400 text-xs font-semibold hover:bg-rose-500/20 transition-colors border border-rose-500/20"
                 >
                     <RotateCcw className="w-3.5 h-3.5" />
