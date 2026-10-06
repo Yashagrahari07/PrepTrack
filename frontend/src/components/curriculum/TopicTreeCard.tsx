@@ -258,6 +258,19 @@ export function TopicTreeCard({ topic, categoryColor = '#6366f1', onAddSubtopic 
                                         <option value="LEARNED">Learned</option>
                                         <option value="INTERVIEW_READY">Interview Ready</option>
                                     </select>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (window.confirm(`Delete subtopic "${sub.title}"?`)) {
+                                                deleteTopic(sub.id);
+                                            }
+                                        }}
+                                        className="p-1 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
+                                        title="Delete subtopic"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
                                 </div>
                             </div>
                         );

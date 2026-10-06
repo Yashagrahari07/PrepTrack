@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Plus, BookOpen, Sparkles, FolderPlus } from 'lucide-react';
+import { Search, Plus, BookOpen, Sparkles, FolderPlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCategories, useCategoryTopics } from '@/hooks/useCurriculum';
@@ -105,8 +105,18 @@ export default function CurriculumPage() {
                         placeholder="Search topics in this domain..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 h-10 text-xs sm:text-sm bg-card/60"
+                        className="pl-10 pr-9 h-10 text-xs sm:text-sm bg-card/60"
                     />
+                    {searchQuery && (
+                        <button
+                            type="button"
+                            onClick={() => setSearchQuery('')}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-md transition-colors"
+                            title="Clear search"
+                        >
+                            <X className="w-3.5 h-3.5" />
+                        </button>
+                    )}
                 </div>
 
                 <div className="text-xs text-muted-foreground font-medium">

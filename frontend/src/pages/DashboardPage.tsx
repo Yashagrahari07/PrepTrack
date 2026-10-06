@@ -316,17 +316,18 @@ export default function DashboardPage() {
                             const pctLearned = Math.round((cat.learned / total) * 100);
 
                             return (
-                                <div
+                                <Link
                                     key={cat.category_id}
-                                    className="rounded-2xl bg-card/60 border border-border p-4 flex flex-col gap-3"
+                                    to="/app/curriculum"
+                                    className="rounded-2xl bg-card/60 border border-border p-4 flex flex-col gap-3 hover:border-primary/50 hover:bg-card/90 transition-all group"
                                 >
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <span
-                                                className="w-3 h-3 rounded-full shrink-0"
+                                                className="w-3 h-3 rounded-full shrink-0 group-hover:scale-110 transition-transform"
                                                 style={{ backgroundColor: cat.color }}
                                             />
-                                            <span className="text-xs font-bold text-foreground truncate">
+                                            <span className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">
                                                 {cat.category_name}
                                             </span>
                                         </div>
@@ -358,7 +359,7 @@ export default function DashboardPage() {
                                         <span className="text-amber-400">{cat.in_progress} In Progress</span>
                                         <span>{cat.not_started} New</span>
                                     </div>
-                                </div>
+                                </Link>
                             );
                         })}
                     </div>
