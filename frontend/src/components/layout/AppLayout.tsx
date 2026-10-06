@@ -6,7 +6,7 @@ import { CommandMenu } from './CommandMenu';
 
 export function AppLayout() {
     return (
-        <div className="relative min-h-screen bg-background flex flex-col md:flex-row overflow-x-hidden">
+        <div className="relative h-screen w-full bg-background flex flex-col md:flex-row overflow-hidden">
             {/* Background glowing gradients */}
             <div className="pointer-events-none fixed inset-0 ambient-glow-indigo opacity-50" aria-hidden="true" />
 
@@ -14,7 +14,7 @@ export function AppLayout() {
             <Sidebar />
 
             {/* Main Content Area */}
-            <div className="relative z-10 flex-1 flex flex-col min-w-0 min-h-screen">
+            <div className="relative z-10 flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
                 {/* Header TopNav */}
                 <TopNav />
 

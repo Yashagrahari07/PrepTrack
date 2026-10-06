@@ -69,7 +69,7 @@ export function Sidebar() {
             {/* Sidebar drawer */}
             <aside
                 className={cn(
-                    'fixed md:static inset-y-0 left-0 z-50 flex flex-col w-64 shrink-0 bg-card border-r border-border transition-transform duration-200 ease-in-out md:translate-x-0',
+                    'fixed md:static inset-y-0 left-0 z-50 flex flex-col w-64 shrink-0 bg-card border-r border-border transition-transform duration-200 ease-in-out md:translate-x-0 h-full',
                     isSidebarOpen ? 'translate-x-0' : '-translate-x-full',
                 )}
             >
@@ -91,7 +91,7 @@ export function Sidebar() {
                 </div>
 
                 {/* Navigation links */}
-                <nav className="flex-1 p-3 flex flex-col gap-1.5 overflow-y-auto">
+                <nav className="flex-1 p-3 flex flex-col gap-1.5 overflow-y-auto min-h-0">
                     <div className="px-3 py-1.5 mb-1">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                             Control Center
