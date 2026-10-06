@@ -39,6 +39,11 @@ func main() {
 		})
 	})
 
+	// Render's internal probe uses HEAD /; Echo doesn't derive it from GET.
+	e.HEAD("/", func(c echo.Context) error {
+		return c.NoContent(http.StatusOK)
+	})
+
 	// Health check endpoint
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]interface{}{
