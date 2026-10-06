@@ -23,7 +23,6 @@ export interface SignupRequest {
     display_name: string;
     email: string;
     password: string;
-    invite_code: string;
 }
 
 export type TopicStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'LEARNED' | 'INTERVIEW_READY';

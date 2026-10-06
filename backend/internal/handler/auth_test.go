@@ -14,7 +14,6 @@ import (
 func TestSignup_ValidationErrors(t *testing.T) {
 	e := echo.New()
 	cfg := &config.Config{
-		InviteCode:   "secret123",
 		JWTSecret:    "supersecretjwtkey32byteslongkey!",
 		JWTExpiryHrs: 168,
 	}
@@ -43,12 +42,6 @@ func TestSignup_ValidationErrors(t *testing.T) {
 			body:           `{"display_name":"Yash","email":"yash@example.com","password":"123"}`,
 			expectedStatus: http.StatusBadRequest,
 			expectedCode:   "PASSWORD_TOO_SHORT",
-		},
-		{
-			name:           "Invalid Invite Code",
-			body:           `{"display_name":"Yash","email":"yash@example.com","password":"Password123!","invite_code":"wrong"}`,
-			expectedStatus: http.StatusBadRequest,
-			expectedCode:   "INVALID_INVITE_CODE",
 		},
 	}
 

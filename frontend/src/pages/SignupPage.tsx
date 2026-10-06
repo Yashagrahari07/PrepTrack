@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, EyeOff, Target, ArrowRight, KeyRound, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, Target, ArrowRight, KeyRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,7 +13,6 @@ export default function SignupPage() {
         display_name: '',
         email: '',
         password: '',
-        invite_code: '',
     });
     const [showPassword, setShowPassword] = useState(false);
 
@@ -60,7 +59,7 @@ export default function SignupPage() {
                         </div>
                         <h1 className="text-2xl font-bold text-foreground mb-1.5">Create your account</h1>
                         <p className="text-muted-foreground text-sm">
-                            Prep is invite-only. Enter your invite code to get started.
+                            Free to join. Set up your account to start tracking your prep.
                         </p>
                     </div>
 
@@ -118,29 +117,6 @@ export default function SignupPage() {
                                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                 </button>
                             </div>
-                        </div>
-
-                        <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="invite_code">Invite Code</Label>
-                            <Input
-                                id="invite_code"
-                                name="invite_code"
-                                type="text"
-                                autoComplete="off"
-                                placeholder="Enter your invite code"
-                                value={formData.invite_code}
-                                onChange={handleChange}
-                                className="font-mono tracking-widest"
-                                required
-                            />
-                        </div>
-
-                        {/* Tip */}
-                        <div className="flex items-start gap-2 rounded-xl bg-primary/5 border border-primary/20 px-4 py-3">
-                            <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                            <p className="text-xs text-muted-foreground leading-relaxed">
-                                PrepTrack is closed to the public. You need an invite code from an existing member.
-                            </p>
                         </div>
 
                         <Button

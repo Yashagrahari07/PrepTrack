@@ -30,7 +30,7 @@ func NewAuthHandler(pool *pgxpool.Pool, cfg *config.Config) *AuthHandler {
 	}
 }
 
-// Signup handles user registration with invite code validation
+// Signup handles open user registration
 func (h *AuthHandler) Signup(c echo.Context) error {
 	var req model.SignupRequest
 	if err := c.Bind(&req); err != nil {
@@ -46,10 +46,6 @@ func (h *AuthHandler) Signup(c echo.Context) error {
 
 	if len(req.Password) < 8 {
 		return sendError(c, http.StatusBadRequest, "PASSWORD_TOO_SHORT", "Password must be at least 8 characters long")
-	}
-
-	if req.InviteCode != h.cfg.InviteCode {
-		return sendError(c, http.StatusBadRequest, "INVALID_INVITE_CODE", "Invalid invite code")
 	}
 
 	// Hash password with bcrypt (cost=12)

@@ -13,7 +13,6 @@ type Config struct {
 	DatabaseURL   string
 	JWTSecret     string
 	JWTExpiryHrs  int
-	InviteCode    string
 	AllowedOrigin string
 	AppEnv        string
 }
@@ -25,7 +24,6 @@ func Load() *Config {
 		Port:          getEnv("PORT", "8080"),
 		DatabaseURL:   mustEnv("DATABASE_URL"),
 		JWTSecret:     mustEnv("JWT_SECRET"),
-		InviteCode:    mustEnv("INVITE_CODE"),
 		AllowedOrigin: getEnv("ALLOWED_ORIGIN", "http://localhost:5173"),
 		AppEnv:        getEnv("APP_ENV", "development"),
 	}

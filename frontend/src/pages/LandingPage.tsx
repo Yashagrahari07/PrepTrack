@@ -140,7 +140,7 @@ export default function LandingPage() {
                     style={{ opacity: 0, animationFillMode: 'forwards' }}
                 >
                     <CheckCircle2 className="w-4 h-4 text-status-interview-ready" />
-                    Invite-only. By invite code only — for serious prep only.
+                    Free to join. Built for serious prep.
                 </div>
 
                 {/* Dashboard Preview */}
@@ -279,7 +279,7 @@ export default function LandingPage() {
                         Ready to prep with purpose?
                     </h2>
                     <p className="relative text-muted-foreground text-lg mb-8 max-w-md mx-auto">
-                        Join with an invite code and get your full curriculum structured in minutes.
+                        Create a free account and get your prep structured in minutes.
                     </p>
                     <Link
                         to="/signup"
