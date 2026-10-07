@@ -8,6 +8,7 @@ import {
     Settings,
     LogOut,
     X,
+    FileText,
 } from 'lucide-react';
 import { useCurrentUser, useLogout } from '@/hooks/useAuth';
 import { useAppStore } from '@/stores/app/app.store';
@@ -53,6 +54,7 @@ export function Sidebar() {
         { label: 'Curriculum', to: '/home/curriculum', icon: <BookOpen className="w-4 h-4" /> },
         { label: 'Revisions', to: '/home/revisions', icon: <RotateCcw className="w-4 h-4" /> },
         { label: 'Stats Hub', to: '/home/stats', icon: <TrendingUp className="w-4 h-4" /> },
+        { label: 'Guide', to: '/home/guide', icon: <FileText className="w-4 h-4" /> },
         { label: 'Settings', to: '/home/settings', icon: <Settings className="w-4 h-4" /> },
     ];
 
@@ -95,7 +97,7 @@ export function Sidebar() {
                 <nav className="flex-1 p-3 flex flex-col gap-1.5 overflow-y-auto min-h-0">
                     <div className="px-3 py-1.5 mb-1">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                            Control Center
+                            Navigation
                         </span>
                     </div>
 
@@ -118,26 +120,35 @@ export function Sidebar() {
                 </nav>
 
                 {/* User footer */}
-                <div className="p-3 border-t border-border bg-muted/20">
-                    <div className="flex items-center gap-3 px-3 py-2 rounded-xl mb-1">
-                        <div className="w-8 h-8 rounded-xl bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-                            {user?.display_name?.[0]?.toUpperCase() ?? 'U'}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">
-                                {user?.display_name}
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                <div className="p-3 border-t border-border">
+                    <div className="rounded-2xl border border-border/70 bg-gradient-to-b from-muted/50 to-muted/10 px-2.5 py-2">
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-xs shrink-0">
+                                {user?.display_name?.[0]?.toUpperCase() ?? 'U'}
+                            </div>
+                            <div className="flex-1 min-w-0 leading-none">
+                                <p className="text-sm font-semibold text-foreground truncate tracking-tight">
+                                    {user?.display_name}
+                                </p>
+                                <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{user?.email}</p>
+                            </div>
+                            <div className="relative shrink-0 self-center group/logout">
+                                <button
+                                    onClick={logout}
+                                    aria-label="Log out"
+                                    className="p-2 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 active:scale-95 transition-all duration-150"
+                                >
+                                    <LogOut className="w-4 h-4" />
+                                </button>
+                                <span
+                                    role="tooltip"
+                                    className="pointer-events-none absolute -top-9 right-0 whitespace-nowrap rounded-lg bg-popover border border-border px-2.5 py-1 text-[11px] font-semibold text-popover-foreground shadow-xl opacity-0 translate-y-1 group-hover/logout:opacity-100 group-hover/logout:translate-y-0 transition-all duration-150"
+                                >
+                                    Log out
+                                </span>
+                            </div>
                         </div>
                     </div>
-
-                    <button
-                        onClick={logout}
-                        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-150 text-sm font-medium"
-                    >
-                        <LogOut className="w-4 h-4" />
-                        <span>Logout</span>
-                    </button>
                 </div>
             </aside>
         </>

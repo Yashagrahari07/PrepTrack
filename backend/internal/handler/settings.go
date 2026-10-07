@@ -12,7 +12,7 @@ import (
 	"github.com/yash/preptrack-backend/internal/model"
 )
 
-const DefaultDSASheetURL = "https://neetcode.io/practice/practice/neetcode150"
+const DefaultReferenceSheetURL = "https://neetcode.io/practice/practice/neetcode150"
 
 type SettingsHandler struct {
 	pool *pgxpool.Pool
@@ -35,21 +35,21 @@ func (h *SettingsHandler) Get(c echo.Context) error {
 	var settings model.UserSettings
 
 	err := h.pool.QueryRow(ctx,
-		`SELECT user_id, weekly_target_hours, dsa_sheet_url, updated_at
+		`SELECT user_id, weekly_target_hours, reference_sheet_url, goal_type, goal_custom_text, COALESCE(show_reference_sheet, TRUE), updated_at
 		 FROM user_settings WHERE user_id = $1`,
 		userID,
-	).Scan(&settings.UserID, &settings.WeeklyTargetHours, &settings.DSASheetURL, &settings.UpdatedAt)
+	).Scan(&settings.UserID, &settings.WeeklyTargetHours, &settings.ReferenceSheetURL, &settings.GoalType, &settings.GoalCustomText, &settings.ShowReferenceSheet, &settings.UpdatedAt)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			// Initialize default settings using PostgreSQL schema defaults
+			// Initialize default settings with explicit defaults for all new columns
 			err = h.pool.QueryRow(ctx,
-				`INSERT INTO user_settings (user_id)
-				 VALUES ($1)
+				`INSERT INTO user_settings (user_id, weekly_target_hours, reference_sheet_url, goal_type, goal_custom_text, show_reference_sheet)
+				 VALUES ($1, 15.0, 'https://neetcode.io/practice/practice/neetcode150', NULL, NULL, TRUE)
 				 ON CONFLICT (user_id) DO UPDATE SET updated_at = NOW()
-				 RETURNING user_id, weekly_target_hours, dsa_sheet_url, updated_at`,
+				 RETURNING user_id, weekly_target_hours, reference_sheet_url, goal_type, goal_custom_text, COALESCE(show_reference_sheet, TRUE), updated_at`,
 				userID,
-			).Scan(&settings.UserID, &settings.WeeklyTargetHours, &settings.DSASheetURL, &settings.UpdatedAt)
+			).Scan(&settings.UserID, &settings.WeeklyTargetHours, &settings.ReferenceSheetURL, &settings.GoalType, &settings.GoalCustomText, &settings.ShowReferenceSheet, &settings.UpdatedAt)
 
 			if err != nil {
 				return sendError(c, http.StatusInternalServerError, "DATABASE_ERROR", "Failed to initialize default user settings")
@@ -64,7 +64,7 @@ func (h *SettingsHandler) Get(c echo.Context) error {
 	})
 }
 
-// Update updates weekly target hours and/or DSA sheet URL
+// Update updates weekly target hours, reference sheet URL, goal preferences, and reference sheet visibility
 func (h *SettingsHandler) Update(c echo.Context) error {
 	userID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -82,27 +82,43 @@ func (h *SettingsHandler) Update(c echo.Context) error {
 		}
 	}
 
-	if req.DSASheetURL != nil {
-		trimmed := strings.TrimSpace(*req.DSASheetURL)
+	if req.ReferenceSheetURL != nil {
+		trimmed := strings.TrimSpace(*req.ReferenceSheetURL)
 		if trimmed == "" {
-			return sendError(c, http.StatusBadRequest, "INVALID_DSA_SHEET_URL", "DSA sheet URL cannot be empty")
+			return sendError(c, http.StatusBadRequest, "INVALID_REFERENCE_SHEET_URL", "Reference sheet URL cannot be empty")
 		}
-		req.DSASheetURL = &trimmed
+		req.ReferenceSheetURL = &trimmed
+	}
+
+	if req.GoalCustomText != nil {
+		trimmed := strings.TrimSpace(*req.GoalCustomText)
+		if len(trimmed) > 200 {
+			return sendError(c, http.StatusBadRequest, "GOAL_TEXT_TOO_LONG", "Goal description must be 200 characters or less")
+		}
+		if trimmed == "" {
+			req.GoalCustomText = nil
+		} else {
+			req.GoalCustomText = &trimmed
+		}
 	}
 
 	ctx := c.Request().Context()
 	var settings model.UserSettings
 
 	err := h.pool.QueryRow(ctx,
-		`INSERT INTO user_settings (user_id, weekly_target_hours, dsa_sheet_url, updated_at)
-		 VALUES ($1, COALESCE($2, 15.0), COALESCE($3, $4), NOW())
+		`INSERT INTO user_settings (user_id, weekly_target_hours, reference_sheet_url, goal_type, goal_custom_text, show_reference_sheet, updated_at)
+		 VALUES ($1, COALESCE($2, 15.0), COALESCE($3, $4), $5, $6, COALESCE($7, TRUE), NOW())
 		 ON CONFLICT (user_id) DO UPDATE SET
 			weekly_target_hours = COALESCE($2, user_settings.weekly_target_hours),
-			dsa_sheet_url = COALESCE($3, user_settings.dsa_sheet_url),
+			reference_sheet_url = COALESCE($3, user_settings.reference_sheet_url),
+			goal_type = COALESCE($5, user_settings.goal_type),
+			goal_custom_text = COALESCE($6, user_settings.goal_custom_text),
+			show_reference_sheet = COALESCE($7, user_settings.show_reference_sheet),
 			updated_at = NOW()
-		 RETURNING user_id, weekly_target_hours, dsa_sheet_url, updated_at`,
-		userID, req.WeeklyTargetHours, req.DSASheetURL, DefaultDSASheetURL,
-	).Scan(&settings.UserID, &settings.WeeklyTargetHours, &settings.DSASheetURL, &settings.UpdatedAt)
+		 RETURNING user_id, weekly_target_hours, reference_sheet_url, goal_type, goal_custom_text, show_reference_sheet, updated_at`,
+		userID, req.WeeklyTargetHours, req.ReferenceSheetURL, DefaultReferenceSheetURL,
+		req.GoalType, req.GoalCustomText, req.ShowReferenceSheet,
+	).Scan(&settings.UserID, &settings.WeeklyTargetHours, &settings.ReferenceSheetURL, &settings.GoalType, &settings.GoalCustomText, &settings.ShowReferenceSheet, &settings.UpdatedAt)
 
 	if err != nil {
 		return sendError(c, http.StatusInternalServerError, "DATABASE_ERROR", "Failed to update user settings")

@@ -135,11 +135,17 @@ export interface StatsResponse {
 export interface UserSettings {
     user_id?: string;
     weekly_target_hours: number;
-    dsa_sheet_url: string;
+    reference_sheet_url: string;
+    goal_type: string | null;
+    goal_custom_text: string | null;
+    show_reference_sheet: boolean;
     updated_at?: string;
 }
 
 export interface UpdateSettingsRequest {
     weekly_target_hours?: number;
-    dsa_sheet_url?: string;
+    reference_sheet_url?: string;
+    goal_type?: string | null;
+    goal_custom_text?: string | null;
+    show_reference_sheet?: boolean;
 }

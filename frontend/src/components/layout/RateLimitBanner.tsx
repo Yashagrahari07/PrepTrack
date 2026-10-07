@@ -40,7 +40,7 @@ export function RateLimitBanner() {
                 </div>
                 <div className="flex flex-col min-w-0">
                     <p className="font-semibold text-xs sm:text-sm text-amber-100 truncate">
-                        Rate Limit Active — Slow Down
+                        Rate limit reached. Please slow down.
                     </p>
                     <p className="text-[11px] text-amber-300/80 flex items-center gap-1.5 mt-0.5">
                         <Clock className="w-3.5 h-3.5 shrink-0" />

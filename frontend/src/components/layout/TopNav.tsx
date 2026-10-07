@@ -28,11 +28,13 @@ export function TopNav() {
         if (path.startsWith('/home/revisions')) return 'Spaced Revisions';
         if (path.startsWith('/home/stats')) return 'Stats Hub';
         if (path.startsWith('/home/settings')) return 'Settings';
+        if (path.startsWith('/home/guide')) return 'Guide';
         if (path.startsWith('/home/topics')) return 'Topic Workspace';
-        return 'Control Center';
+        return 'Navigation';
     };
 
-    const dsaUrl = settings?.dsa_sheet_url || 'https://neetcode.io/practice/practice/neetcode150';
+    const referenceSheetUrl = settings?.reference_sheet_url || 'https://neetcode.io/practice/practice/neetcode150';
+    const showReferenceSheet = settings?.show_reference_sheet ?? true;
 
     return (
         <header className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 py-3.5 bg-card/80 backdrop-blur-md border-b border-border">
@@ -53,21 +55,20 @@ export function TopNav() {
                 </div>
             </div>
 
-            {/* Center: External Quick Links (Hidden on small screens) */}
-            <div className="hidden lg:flex items-center gap-2">
-                <a
-                    href={dsaUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-muted/40 hover:bg-muted text-xs font-medium text-muted-foreground hover:text-foreground transition-all border border-border/50"
-                >
-                    <span>DSA Sheet</span>
-                    <ExternalLink className="w-3 h-3" />
-                </a>
-            </div>
-
             {/* Right: Actions, Streak & Log Time */}
             <div className="flex items-center gap-2 sm:gap-3">
+                {/* Reference Sheet Shortcut */}
+                {showReferenceSheet && (
+                    <a
+                        href={referenceSheetUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/40 hover:bg-muted text-xs font-semibold text-muted-foreground hover:text-foreground transition-all border border-border/50"
+                    >
+                        <span>Reference Sheet</span>
+                        <ExternalLink className="w-3 h-3" />
+                    </a>
+                )}
                 {/* Streak Pill */}
                 <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-status-in-progress/10 text-status-in-progress text-xs font-semibold border border-status-in-progress/20">
                     <Flame className="w-3.5 h-3.5 animate-pulse-flame" />
@@ -83,14 +84,14 @@ export function TopNav() {
                     <span>Revisions</span>
                 </Link>
 
-                {/* Log Time CTA */}
+                {/* Log Session CTA */}
                 <Button
                     size="sm"
                     onClick={() => openQuickLog()}
                     className="gap-1.5 shadow-md shadow-primary/20"
                 >
                     <Plus className="w-4 h-4" />
-                    <span className="hidden sm:inline">Log Time</span>
+                    <span className="hidden sm:inline">Log Session</span>
                 </Button>
 
                 {/* Command Menu Shortcut Trigger */}

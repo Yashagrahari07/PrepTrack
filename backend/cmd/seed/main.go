@@ -397,8 +397,8 @@ func main() {
 	}
 
 	_, _ = pool.Exec(ctx,
-		`INSERT INTO user_settings (user_id, weekly_target_hours, dsa_sheet_url)
-		 VALUES ($1, 15.0, 'https://neetcode.io/practice/practice/neetcode150')
+		`INSERT INTO user_settings (user_id, weekly_target_hours, reference_sheet_url, goal_type, goal_custom_text, show_reference_sheet)
+		 VALUES ($1, 15.0, 'https://neetcode.io/practice/practice/neetcode150', 'sde_backend', NULL, TRUE)
 		 ON CONFLICT (user_id) DO NOTHING`,
 		userID,
 	)

@@ -12,7 +12,9 @@ import {
 } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/useAuth';
 import { useDashboard } from '@/hooks/useDashboard';
+import { useSettings } from '@/hooks/useSettings';
 import { Button } from '@/components/ui/button';
+import { GOAL_MESSAGES } from '@/lib/constants';
 
 // Helper to determine heatmap cell intensity class
 function getHeatmapColor(minutes: number): string {
@@ -26,6 +28,7 @@ function getHeatmapColor(minutes: number): string {
 export default function DashboardPage() {
     const { data: user } = useCurrentUser();
     const { data: dashboard, isLoading } = useDashboard();
+    const { data: settings } = useSettings();
 
     const streakDays = dashboard?.streak_days ?? 0;
     const weeklyHours = dashboard?.weekly_hours ?? 0;
@@ -35,6 +38,44 @@ export default function DashboardPage() {
     const focusTopic = dashboard?.focus_topic ?? null;
     const categoryProgress = Array.isArray(dashboard?.category_progress) ? dashboard.category_progress : [];
     const heatmap = Array.isArray(dashboard?.heatmap) ? dashboard.heatmap : [];
+
+    // ── Welcome message personalization ────────────────────────────
+    const getWelcomeSubtitle = (): React.ReactNode => {
+        const goal = settings?.goal_type;
+        const custom = settings?.goal_custom_text;
+
+        // Goal not set yet → CTA to Settings
+        if (!goal) {
+            return (
+                <span className="flex items-center gap-1">
+                    <span>Consistency is your greatest advantage. Keep building momentum toward your goal.</span>
+                    <Link to="/home/settings" className="text-primary hover:underline text-xs font-medium ml-1">
+                        Set your goal →
+                    </Link>
+                </span>
+            );
+        }
+
+        // Custom goal with text
+        if (goal === 'custom' && custom) {
+            return `You're working toward: "${custom}". Consistency makes it happen.`;
+        }
+
+        // Custom goal but empty text
+        if (goal === 'custom' && !custom) {
+            return (
+                <span className="flex items-center gap-1">
+                    <span>Consistency is your greatest advantage. </span>
+                    <Link to="/home/settings" className="text-primary hover:underline text-xs font-medium ml-1">
+                        Describe your custom goal →
+                    </Link>
+                </span>
+            );
+        }
+
+        // Predefined goal
+        return GOAL_MESSAGES[goal as keyof typeof GOAL_MESSAGES] || 'Consistency is your greatest advantage. Keep building momentum toward your goal.';
+    };
 
     if (isLoading) {
         return (
@@ -62,7 +103,7 @@ export default function DashboardPage() {
                             <Sparkles className="w-5 h-5 text-amber-400 animate-bounce" />
                         </h2>
                         <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed max-w-xl">
-                            Consistency is your greatest advantage. Keep building momentum towards your SDE 1 target.
+                            {getWelcomeSubtitle()}
                         </p>
                     </div>
 
@@ -292,22 +333,22 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            {/* ── Category Mastery Progress Grid ──────────────────── */}
+            {/* ── Category Progress Grid ───────────────────────────────── */}
             <div className="glass-panel rounded-3xl p-6 border border-white/10 flex flex-col gap-4">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h3 className="text-sm font-bold text-foreground">Curriculum Domain Progress</h3>
-                        <p className="text-xs text-muted-foreground">Breakdown of topic states by domain</p>
+                        <h3 className="text-sm font-bold text-foreground">Category Progress</h3>
+                        <p className="text-xs text-muted-foreground">Breakdown of topic states by category</p>
                     </div>
 
                     <Link to="/home/curriculum" className="text-xs text-primary font-semibold hover:underline">
-                        Manage Domains &rarr;
+                        Manage Categories &rarr;
                     </Link>
                 </div>
 
                 {categoryProgress.length === 0 ? (
                     <p className="text-xs text-muted-foreground italic py-4 text-center">
-                        No domains found. Create domains in Curriculum Management to begin tracking.
+                        No categories found. Create categories in Curriculum Management to begin tracking.
                     </p>
                 ) : (
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">

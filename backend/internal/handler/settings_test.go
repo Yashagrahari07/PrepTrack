@@ -40,10 +40,16 @@ func TestSettingsUpdate_Validation(t *testing.T) {
 			expectedCode:   "INVALID_TARGET_HOURS",
 		},
 		{
-			name:           "Empty DSA Sheet URL",
-			body:           `{"dsa_sheet_url": "   "}`,
+			name:           "Empty Reference Sheet URL",
+			body:           `{"reference_sheet_url": "   "}`,
 			expectedStatus: http.StatusBadRequest,
-			expectedCode:   "INVALID_DSA_SHEET_URL",
+			expectedCode:   "INVALID_REFERENCE_SHEET_URL",
+		},
+		{
+			name:           "Goal Custom Text Too Long",
+			body:           `{"goal_custom_text": "` + strings.Repeat("a", 201) + `"}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedCode:   "GOAL_TEXT_TOO_LONG",
 		},
 	}
 

@@ -2,6 +2,8 @@ import { Search, Plus, BookOpen, Sparkles, FolderPlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCategories, useCategoryTopics } from '@/hooks/useCurriculum';
+import { useSettings } from '@/hooks/useSettings';
+import { GOAL_LABELS } from '@/lib/constants';
 import { CategoryTabList } from '@/components/curriculum/CategoryTabList';
 import { TopicTreeCard } from '@/components/curriculum/TopicTreeCard';
 import { TopicFormModal } from '@/components/curriculum/TopicFormModal';
@@ -11,6 +13,15 @@ import { useAppStore } from '@/stores/app/app.store';
 export default function CurriculumPage() {
     const { data: rawCategories, isLoading: isLoadingCategories } = useCategories();
     const categories = Array.isArray(rawCategories) ? rawCategories : [];
+    const { data: settings } = useSettings();
+
+    // Dynamic goal label for header copy (null when the user has not set a goal yet)
+    const goalLabel =
+        settings?.goal_type === 'custom'
+            ? settings?.goal_custom_text?.trim() || 'Custom Goal'
+            : settings?.goal_type
+              ? GOAL_LABELS[settings.goal_type as keyof typeof GOAL_LABELS]
+              : null;
 
     // ── Curriculum slice ───────────────────────────────────────────────────
     const selectedCategoryId = useAppStore((s) => s.selectedCategoryId);
@@ -59,13 +70,15 @@ export default function CurriculumPage() {
                 <div>
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-2">
                         <Sparkles className="w-3.5 h-3.5" />
-                        SDE 1 Curriculum Control
+                        {goalLabel ?? 'Study Plan'}
                     </div>
                     <h1 className="text-xl sm:text-2xl font-extrabold text-foreground tracking-tight">
                         Curriculum Management
                     </h1>
                     <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-xl">
-                        Organize your backend prep across domains. Click any topic or &ldquo;Studio&rdquo; to attach resources (YouTube, blogs, docs) and write markdown notes.
+                        {goalLabel
+                            ? `Organize your ${goalLabel} preparation across categories. Click any topic or \u201cStudio\u201d to attach resources (YouTube, blogs, docs) and write markdown notes.`
+                            : `Organize your preparation across categories. Click any topic or \u201cStudio\u201d to attach resources (YouTube, blogs, docs) and write markdown notes.`}
                     </p>
                 </div>
 
@@ -76,7 +89,7 @@ export default function CurriculumPage() {
                         className="gap-1.5 text-xs"
                     >
                         <FolderPlus className="w-4 h-4 text-primary" />
-                        <span>Add Domain</span>
+                        <span>Add Category</span>
                     </Button>
 
                     <Button onClick={handleOpenCreateTopic} className="gap-2 shadow-lg shadow-primary/20">
@@ -107,7 +120,7 @@ export default function CurriculumPage() {
                 <div className="relative flex-1 min-w-[240px] max-w-md">
                     <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                        placeholder="Search topics in this domain..."
+                        placeholder="Search topics in this category..."
                         value={curriculumSearch}
                         onChange={(e) => setCurriculumSearch(e.target.value)}
                         className="pl-10 pr-9 h-10 text-xs sm:text-sm bg-card/60"

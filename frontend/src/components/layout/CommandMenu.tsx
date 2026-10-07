@@ -58,14 +58,16 @@ export function CommandMenu() {
         setQuery('');
     };
 
-    const dsaUrl = userSettings?.dsa_sheet_url || 'https://leetcode.com';
+    const referenceSheetUrl = userSettings?.reference_sheet_url || 'https://neetcode.io/practice/practice/neetcode150';
+    const showReferenceSheet = userSettings?.show_reference_sheet ?? true;
 
     const navigationItems = [
-        { label: 'Dashboard Overview', path: '/home', icon: <BarChart3 className="w-4 h-4 text-primary" /> },
-        { label: 'Curriculum Tree', path: '/home/curriculum', icon: <BookOpen className="w-4 h-4 text-emerald-400" /> },
-        { label: 'Spaced Revisions', path: '/home/revisions', icon: <RotateCcw className="w-4 h-4 text-rose-400" /> },
-        { label: 'Stats Hub & Analytics', path: '/home/stats', icon: <TrendingUp className="w-4 h-4 text-violet-400" /> },
-        { label: 'User Settings', path: '/home/settings', icon: <Settings className="w-4 h-4 text-amber-400" /> },
+        { label: 'Dashboard', path: '/home', icon: <BarChart3 className="w-4 h-4 text-primary" /> },
+        { label: 'Curriculum', path: '/home/curriculum', icon: <BookOpen className="w-4 h-4 text-emerald-400" /> },
+        { label: 'Revisions', path: '/home/revisions', icon: <RotateCcw className="w-4 h-4 text-rose-400" /> },
+        { label: 'Stats Hub', path: '/home/stats', icon: <TrendingUp className="w-4 h-4 text-violet-400" /> },
+        { label: 'Guide', path: '/home/guide', icon: <BookOpen className="w-4 h-4 text-amber-400" /> },
+        { label: 'Settings', path: '/home/settings', icon: <Settings className="w-4 h-4 text-amber-400" /> },
     ];
 
     const filteredNav = navigationItems.filter((item) =>
@@ -132,7 +134,7 @@ export function CommandMenu() {
                     {filteredCategories.length > 0 && (
                         <div>
                             <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                                Curriculum Domains
+                                Categories
                             </div>
                             <div className="flex flex-col gap-0.5 mt-1">
                                 {filteredCategories.map((cat) => (
@@ -172,16 +174,18 @@ export function CommandMenu() {
                                 <span>Log Study Time</span>
                             </button>
 
-                            <a
-                                href={dsaUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={closeCommandMenu}
-                                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-foreground hover:bg-muted/60 transition-colors text-left"
-                            >
-                                <ExternalLink className="w-4 h-4 text-sky-400" />
-                                <span>Open DSA Sheet</span>
-                            </a>
+                            {showReferenceSheet && (
+                                <a
+                                    href={referenceSheetUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onClick={closeCommandMenu}
+                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-foreground hover:bg-muted/60 transition-colors text-left"
+                                >
+                                    <ExternalLink className="w-4 h-4 text-sky-400" />
+                                    <span>Open Reference Sheet</span>
+                                </a>
+                            )}
 
                             <button
                                 onClick={() => {

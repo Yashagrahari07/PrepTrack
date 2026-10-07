@@ -14,6 +14,7 @@ import TopicWorkspacePage from '@/pages/TopicWorkspacePage';
 import RevisionsPage from '@/pages/RevisionsPage';
 import StatsPage from '@/pages/StatsPage';
 import SettingsPage from '@/pages/SettingsPage';
+import GuidePage from '@/pages/GuidePage';
 
 export default function App() {
     return (
@@ -37,6 +38,7 @@ export default function App() {
                                 <Route path="/home/revisions" element={<RevisionsPage />} />
                                 <Route path="/home/stats" element={<StatsPage />} />
                                 <Route path="/home/settings" element={<SettingsPage />} />
+                                <Route path="/home/guide" element={<GuidePage />} />
                             </Route>
                         </Route>
 

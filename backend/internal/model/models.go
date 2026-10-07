@@ -10,15 +10,21 @@ type User struct {
 }
 
 type UserSettings struct {
-	UserID            string    `json:"user_id"`
-	WeeklyTargetHours float64   `json:"weekly_target_hours"`
-	DSASheetURL       string    `json:"dsa_sheet_url"`
-	UpdatedAt         time.Time `json:"updated_at"`
+	UserID              string    `json:"user_id"`
+	WeeklyTargetHours   float64   `json:"weekly_target_hours"`
+	ReferenceSheetURL   string    `json:"reference_sheet_url"`
+	GoalType            *string   `json:"goal_type"`
+	GoalCustomText      *string   `json:"goal_custom_text"`
+	ShowReferenceSheet  bool      `json:"show_reference_sheet"`
+	UpdatedAt           time.Time `json:"updated_at"`
 }
 
 type UpdateSettingsRequest struct {
-	WeeklyTargetHours *float64 `json:"weekly_target_hours"`
-	DSASheetURL       *string  `json:"dsa_sheet_url"`
+	WeeklyTargetHours   *float64 `json:"weekly_target_hours"`
+	ReferenceSheetURL   *string  `json:"reference_sheet_url"`
+	GoalType            *string  `json:"goal_type"`
+	GoalCustomText      *string  `json:"goal_custom_text"`
+	ShowReferenceSheet  *bool    `json:"show_reference_sheet"`
 }
 
 type SignupRequest struct {

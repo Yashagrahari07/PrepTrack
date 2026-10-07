@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, EyeOff, Target, ArrowRight, Flame } from 'lucide-react';
+import { Eye, EyeOff, Target, ArrowRight, Flame, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,27 +30,29 @@ export default function LoginPage() {
             {/* Back to home */}
             <Link
                 to="/"
-                className="absolute top-6 left-6 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
+                className="absolute top-6 left-6 flex items-center gap-2.5 rounded-full bg-card/70 backdrop-blur border border-border pl-1.5 pr-4 py-1.5 text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all text-sm"
             >
-                <div className="w-7 h-7 rounded-lg bg-card border border-border flex items-center justify-center">
-                    <Target className="w-3.5 h-3.5 text-primary" />
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center shadow-md shadow-primary/30">
+                    <Target className="w-3.5 h-3.5 text-white" />
                 </div>
-                PrepTrack
+                <span className="font-semibold">PrepTrack</span>
             </Link>
 
             {/* Card */}
             <div className="relative z-10 w-full max-w-md">
-                <div className="glass-panel rounded-3xl p-8 sm:p-10 border border-white/10 shadow-2xl shadow-primary/10 animate-fade-up" style={{ opacity: 0, animationFillMode: 'forwards' }}>
+                <div className="glass-panel relative overflow-hidden rounded-3xl p-8 sm:p-10 border border-white/10 shadow-2xl shadow-primary/10 animate-fade-up" style={{ opacity: 0, animationFillMode: 'forwards' }}>
+                    <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" aria-hidden="true" />
 
                     {/* Header */}
                     <div className="mb-8">
                         <div className="flex items-center gap-2 mb-6">
-                            <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center">
-                                <Flame className="w-5 h-5 text-primary animate-pulse-flame" />
+                            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center shadow-lg shadow-primary/30">
+                                <Flame className="w-5 h-5 text-white animate-pulse-flame" />
                             </div>
                         </div>
-                        <h1 className="text-2xl font-bold text-foreground mb-1.5">Welcome back</h1>
-                        <p className="text-muted-foreground text-sm">
+                        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary mb-2">Sign in</p>
+                        <h1 className="text-[28px] font-bold tracking-tight text-foreground mb-1.5">Welcome back</h1>
+                        <p className="text-muted-foreground text-sm leading-relaxed">
                             Sign in to continue your prep streak.
                         </p>
                     </div>
@@ -127,6 +129,10 @@ export default function LoginPage() {
                         <Link to="/signup" className="text-primary hover:underline font-medium">
                             Create an account
                         </Link>
+                    </p>
+                    <p className="mt-5 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/80">
+                        <Lock className="w-3 h-3" />
+                        Your data stays private to your account.
                     </p>
                 </div>
             </div>
