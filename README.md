@@ -1,16 +1,16 @@
 # PrepTrack
 
-**A study control center for any syllabus: SDE interviews, DSA, GATE, and beyond.**
+**Turn scattered prep into structured mastery.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 ![Go](https://img.shields.io/badge/Backend-Go-00ADD8?logo=go&logoColor=white)
 ![React](https://img.shields.io/badge/Frontend-React-61DAFB?logo=react&logoColor=black)
 ![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-4169E1?logo=postgresql&logoColor=white)
 
-PrepTrack turns exam or interview preparation into a structured, measurable, daily actionable
-system. Create your own categories, topics, and subtopics. Attach curated resources. Log study
-time. The platform keeps you consistent with streaks and heatmaps, weekly targets, and automated
-spaced revision (D+1, D+3, D+7, D+21) with confidence scoring.
+PrepTrack is a preparation control center for any syllabus and any goal: SDE interviews, DSA,
+GATE, certifications, and beyond. Create your own categories, topics, and subtopics. Attach
+curated resources. Log study time. Stay consistent with streaks and heatmaps, weekly targets, and
+automated spaced revision (D+1, D+3, D+7, D+21) with confidence scoring. Free to join.
 
 For example, preparing for SDE 1 backend interviews? Create categories like DBMS, Operating
 Systems, or Go. Add topics under each, attach your best resources, and log daily study time. The
@@ -39,10 +39,13 @@ documentation. It links and organizes them.
 | Study-plan CRUD | Categories, topics, and subtopics for any syllabus, strictly scoped per user (`user_id` comes from the verified JWT, never from request input) |
 | Resources | Up to 3 curated links per topic (video, playlist, blog, docs) with status and duration |
 | Study logs | Log minutes per topic with optional comment and date |
-| Dashboard | Streak tracking (30 min per day, 1 grace day), weekly hours vs target, revisions-due count, focus topic, per-category progress, 84-day heatmap |
-| Spaced revisions | Marking a topic `LEARNED` schedules day 1; completing a revision with confidence 1 to 5 schedules the next interval (1, 3, 7, or 21 days); two consecutive 5s promote to `INTERVIEW_READY` |
+| Dashboard | Goal-aware welcome, streak tracking (30 min per day, 1 grace day), weekly hours vs target, revisions-due count, focus topic, per-category progress, 84-day heatmap |
+| Spaced revisions | Marking a topic `LEARNED` schedules day 1; completing a revision with confidence 1 to 5 schedules the next interval (1, 3, 7, or 21 days); two consecutive 5s promote to mastery |
 | Stats | Totals, 8-week hours chart, top topics, heatmap |
-| Settings | Weekly target hours and external reference sheet URL |
+| Preparation goal | Pick from 11 goals (SDE, competitive exams, cloud certifications, languages, or custom). Personalizes dashboard and curriculum copy and suggests a weekly target |
+| Reference sheet | Toggleable shortcut (navbar pill plus command palette) to an editable external sheet URL, with smart defaults per goal |
+| Settings | Weekly target hours, preparation goal, reference sheet toggle and URL |
+| Guide | Built-in docs with section navigation and keyboard-shortcut reference |
 
 ## Tech stack
 
@@ -68,9 +71,10 @@ PrepTrack/
 │   │   ├── handler/    # Auth, categories, topics, resources, logs, dashboard, revisions, stats, settings
 │   │   ├── middleware/ # JWT, CORS, rate limiting
 │   │   └── model/      # Request and response shapes
-│   ├── migrations/001_init.sql
+│   ├── migrations/     # 001_init.sql, 002_user_settings_extensions.sql (UP/DOWN)
 │   └── .env.example
 ├── frontend/
+│   ├── public/         # icon.svg favicon
 │   ├── src/            # api/, pages/, components/, hooks/, stores/, providers/, lib/
 │   ├── vercel.json     # SPA fallback rewrite (deep links serve index.html)
 │   └── .env.example
@@ -162,7 +166,7 @@ signup, login, logout, and health require authentication.
 | `POST /api/auth/login`                                                                                           | Body `{email, password}`, returns `200 {token, user}` |
 | `GET /api/auth/me`, `POST /api/auth/logout`                                                                      | Current user, clear the auth cookie                  |
 | `GET /health`, `GET /`                                                                                           | Public liveness probes                               |
-| `GET /api/settings`, `PATCH /api/settings`                                                                       | Weekly target and reference sheet URL                |
+| `GET /api/settings`, `PATCH /api/settings`                                                                       | Weekly target, goal (`goal_type`, `goal_custom_text`), reference sheet URL and visibility |
 | `GET /api/dashboard`, `GET /api/stats`                                                                           | Aggregated metrics and extended analytics            |
 | `GET /api/categories`, `POST /api/categories`, `PATCH /api/categories/:id`, `DELETE /api/categories/:id`        | Category CRUD                                        |
 | `GET /api/categories/:id/topics`, `GET /api/topics/:id`, `POST /api/topics`, `PATCH /api/topics/:id`, `DELETE /api/topics/:id` | Topic CRUD (`LEARNED` status triggers a revision) |
@@ -173,7 +177,7 @@ signup, login, logout, and health require authentication.
 ## Discipline rules
 
 - Log at least 30 minutes per day to keep the streak. Maximum 3 resources per topic. Complete pending revisions before starting new topics.
-- A topic counts as interview-ready only after a written summary note plus confidence of 4 or higher on 2 consecutive revisions.
+- A topic counts as mastered only after a written summary note plus confidence 5 on 2 consecutive revisions.
 
 ## License
 
