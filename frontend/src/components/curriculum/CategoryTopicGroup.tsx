@@ -13,6 +13,7 @@ interface CategoryTopicGroupProps {
     topics: Topic[];
     emptyNote?: React.ReactNode;
     onRequestDelete: (kind: 'topic' | 'subtopic', id: string, title: string) => void;
+    onRequestEdit: (topic: Topic) => void;
     onAddSubtopic: (parentTopic: Topic) => void;
 }
 
@@ -26,6 +27,7 @@ export function CategoryTopicGroup({
     topics,
     emptyNote,
     onRequestDelete,
+    onRequestEdit,
     onAddSubtopic,
 }: CategoryTopicGroupProps) {
     const qc = useQueryClient();
@@ -92,6 +94,7 @@ export function CategoryTopicGroup({
                                     topic={t}
                                     categoryColor={color}
                                     onAddSubtopic={onAddSubtopic}
+                                    onRequestEdit={onRequestEdit}
                                     onRequestDelete={onRequestDelete}
                                     dragHandle={
                                         <DragHandle

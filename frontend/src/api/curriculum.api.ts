@@ -66,6 +66,7 @@ export async function updateTopicApi(
         confidence?: number;
         notes_md?: string;
         title?: string;
+        category_id?: string;
     },
 ): Promise<Topic> {
     const response = await apiClient.patch<{ topic: Topic }>(`/api/topics/${topicId}`, data);

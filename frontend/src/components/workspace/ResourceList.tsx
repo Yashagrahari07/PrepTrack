@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import {
     ExternalLink,
     Plus,
+    Pencil,
     Trash2,
     Video,
     FileText,
@@ -71,8 +72,9 @@ export function ResourceList({ topicId }: ResourceListProps) {
     const resources = Array.isArray(rawResources) ? rawResources : [];
 
     const { mutate: createResource, isPending: isCreating } = useCreateResource(topicId);
-    const { mutate: updateResource } = useUpdateResource(topicId);
+    const { mutate: updateResource, isPending: isUpdating } = useUpdateResource(topicId);
     const { mutate: deleteResource, isPending: isDeleting } = useDeleteResource(topicId);
+    const isPending = isCreating || isUpdating;
     const reorder = useReorderResources(topicId);
     const [movingId, setMovingId] = useState<string | null>(null);
     const [deletingRes, setDeletingRes] = useState<Resource | null>(null);
@@ -108,27 +110,70 @@ export function ResourceList({ topicId }: ResourceListProps) {
         });
     };
 
-    // Form Modal state
+    // Form Modal state (dual create/edit mode)
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [editingResource, setEditingResource] = useState<Resource | null>(null);
     const [title, setTitle] = useState('');
     const [url, setUrl] = useState('');
     const [type, setType] = useState<ResourceType>('DEV_BLOG');
     const [estMinutes, setEstMinutes] = useState(30);
+    const isEdit = editingResource !== null;
+
+    const openCreateModal = () => {
+        setEditingResource(null);
+        setTitle('');
+        setUrl('');
+        setType('DEV_BLOG');
+        setEstMinutes(30);
+        setIsAddModalOpen(true);
+    };
+
+    const openEditModal = (res: Resource) => {
+        setEditingResource(res);
+        setTitle(res.title);
+        setUrl(res.url);
+        setType(res.type);
+        setEstMinutes(res.est_minutes);
+        setIsAddModalOpen(true);
+    };
+
+    const closeModal = () => {
+        if (isPending) return;
+        closeModal();
+        setEditingResource(null);
+    };
 
     // Handle Escape key
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && isAddModalOpen && !isCreating) {
-                setIsAddModalOpen(false);
+            if (e.key === 'Escape' && isAddModalOpen && !isPending) {
+                closeModal();
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isAddModalOpen, isCreating]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isAddModalOpen, isPending]);
 
     const handleAddSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!title.trim() || !url.trim() || isCreating) return;
+        if (!title.trim() || !url.trim() || isPending) return;
+
+        if (isEdit && editingResource) {
+            updateResource(
+                {
+                    id: editingResource.id,
+                    data: { type, title: title.trim(), url: url.trim(), est_minutes: estMinutes },
+                },
+                {
+                    onSuccess: () => {
+                        closeModal();
+                        setEditingResource(null);
+                    },
+                },
+            );
+            return;
+        }
 
         createResource(
             { type, title: title.trim(), url: url.trim(), est_minutes: estMinutes },
@@ -136,7 +181,7 @@ export function ResourceList({ topicId }: ResourceListProps) {
                 onSuccess: () => {
                     setTitle('');
                     setUrl('');
-                    setIsAddModalOpen(false);
+                    closeModal();
                 },
             },
         );
@@ -158,7 +203,7 @@ export function ResourceList({ topicId }: ResourceListProps) {
                 <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => setIsAddModalOpen(true)}
+                    onClick={openCreateModal}
                     disabled={resources.length >= 3}
                     className="gap-1 text-xs"
                 >
@@ -267,11 +312,22 @@ export function ResourceList({ topicId }: ResourceListProps) {
                                         <option value="DONE">Done</option>
                                     </select>
 
+                                    {/* Edit */}
+                                    <button
+                                        onClick={() => openEditModal(res)}
+                                        className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                                        title="Edit resource"
+                                        aria-label={`Edit resource ${res.title}`}
+                                    >
+                                        <Pencil className="w-3.5 h-3.5" />
+                                    </button>
+
                                     {/* Delete */}
                                     <button
                                         onClick={() => setDeletingRes(res)}
                                         className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                                         title="Remove resource"
+                                        aria-label={`Remove resource ${res.title}`}
                                     >
                                         <Trash2 className="w-3.5 h-3.5" />
                                     </button>
@@ -307,20 +363,21 @@ export function ResourceList({ topicId }: ResourceListProps) {
                 createPortal(
                     <div
                         className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in"
-                        onClick={() => {
-                            if (!isCreating) setIsAddModalOpen(false);
-                        }}
+                        onClick={() => closeModal()}
                     >
                         <div
                             className="relative w-full max-w-md bg-card border border-border shadow-2xl rounded-3xl p-6 animate-fade-up"
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-base font-bold text-foreground">Attach Curated Resource</h3>
+                                <h3 className="text-base font-bold text-foreground">
+                                    {isEdit ? 'Edit Resource' : 'Attach Curated Resource'}
+                                </h3>
                                 <button
                                     type="button"
-                                    onClick={() => setIsAddModalOpen(false)}
-                                    disabled={isCreating}
+                                    onClick={() => closeModal()}
+                                    disabled={isPending}
+                                    aria-label="Close"
                                     className="text-muted-foreground hover:text-foreground p-1 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     title="Close"
                                 >
@@ -335,7 +392,7 @@ export function ResourceList({ topicId }: ResourceListProps) {
                                         id="res-type"
                                         value={type}
                                         onChange={(e) => setType(e.target.value as ResourceType)}
-                                        disabled={isCreating}
+                                        disabled={isPending}
                                         className="h-10 rounded-xl border border-border bg-input/30 px-3 text-xs text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         <option value="YOUTUBE_VIDEO">YouTube Video</option>
@@ -353,8 +410,9 @@ export function ResourceList({ topicId }: ResourceListProps) {
                                         placeholder="e.g. Postgres Indexing Deep Dive"
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
-                                        disabled={isCreating}
+                                        disabled={isPending}
                                         required
+                                        autoFocus
                                     />
                                 </div>
 
@@ -366,7 +424,7 @@ export function ResourceList({ topicId }: ResourceListProps) {
                                         placeholder="https://..."
                                         value={url}
                                         onChange={(e) => setUrl(e.target.value)}
-                                        disabled={isCreating}
+                                        disabled={isPending}
                                         required
                                     />
                                 </div>
@@ -380,22 +438,28 @@ export function ResourceList({ topicId }: ResourceListProps) {
                                         max={600}
                                         value={estMinutes}
                                         onChange={(e) => setEstMinutes(Number(e.target.value))}
-                                        disabled={isCreating}
+                                        disabled={isPending}
                                     />
                                 </div>
 
                                 <div className="flex justify-end gap-2 mt-2">
                                     <Button
                                         type="button"
-                                        variant="ghost"
-                                        disabled={isCreating}
-                                        onClick={() => setIsAddModalOpen(false)}
+                                        variant={isEdit ? 'outline' : 'ghost'}
+                                        disabled={isPending}
+                                        onClick={() => closeModal()}
                                     >
                                         Cancel
                                     </Button>
-                                    <Button type="submit" isLoading={isCreating} loadingText="Attaching...">
-                                        Attach
-                                    </Button>
+                                    {isEdit ? (
+                                        <Button type="submit" isLoading={isPending} loadingText="Updating...">
+                                            Update
+                                        </Button>
+                                    ) : (
+                                        <Button type="submit" isLoading={isPending} loadingText="Attaching...">
+                                            Attach
+                                        </Button>
+                                    )}
                                 </div>
                             </form>
                         </div>
@@ -405,3 +469,4 @@ export function ResourceList({ topicId }: ResourceListProps) {
         </div>
     );
 }
+

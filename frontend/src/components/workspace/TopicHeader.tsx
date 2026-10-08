@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Star, Flame, CheckCircle2, PlayCircle, Circle } from 'lucide-react';
+import { ArrowLeft, Star, Flame, CheckCircle2, PlayCircle, Circle, Pencil } from 'lucide-react';
 import { useUpdateTopic } from '@/hooks/useCurriculum';
+import { useAppStore } from '@/stores/app/app.store';
 import type { Topic, TopicStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -37,6 +38,7 @@ const statusBadgeStyles: Record<TopicStatus, { label: string; bg: string; text: 
 
 export function TopicHeader({ topic }: TopicHeaderProps) {
     const { mutate: updateTopic } = useUpdateTopic();
+    const openEditTopicModal = useAppStore((s) => s.openEditTopicModal);
 
     const handleStatusChange = (newStatus: TopicStatus) => {
         updateTopic({ id: topic.id, data: { status: newStatus } });
@@ -71,9 +73,20 @@ export function TopicHeader({ topic }: TopicHeaderProps) {
                             </span>
                         </div>
                     )}
-                    <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
-                        {topic.title}
-                    </h1>
+                    <div className="flex items-center gap-2">
+                        <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
+                            {topic.title}
+                        </h1>
+                        <button
+                            type="button"
+                            onClick={() => openEditTopicModal(topic)}
+                            className="p-1.5 rounded-xl text-muted-foreground/60 hover:text-primary hover:bg-primary/10 transition-colors shrink-0"
+                            title="Edit topic"
+                            aria-label={`Edit topic ${topic.title}`}
+                        >
+                            <Pencil className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Status Dropdown & Confidence Rating */}

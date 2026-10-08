@@ -1,10 +1,12 @@
 import React from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Category } from '@/lib/types';
 import { useDeleteCategory } from '@/hooks/useCurriculum';
 import { queryKeys } from '@/api/queryKeys';
+import { useAppStore } from '@/stores/app/app.store';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { CategoryFormModal } from '@/components/curriculum/CategoryFormModal';
 
 interface CategoryTabListProps {
     categories: Category[];
@@ -22,6 +24,9 @@ export function CategoryTabList({
     const qc = useQueryClient();
     const { mutate: deleteCategory, isPending: isDeleting } = useDeleteCategory();
     const [deletingCat, setDeletingCat] = React.useState<Category | null>(null);
+    const [editingCat, setEditingCat] = React.useState<Category | null>(null);
+    const isCategoryModalOpen = useAppStore((s) => s.isCategoryModalOpen);
+    const closeCategoryModal = useAppStore((s) => s.closeCategoryModal);
 
     const handleConfirmDelete = () => {
         if (!deletingCat || isDeleting) return;
@@ -54,7 +59,7 @@ export function CategoryTabList({
             {categories.map((cat) => {
                 const isSelected = selectedCategoryId === cat.id;
                 return (
-                    <div key={cat.id} className="relative flex items-center group">
+                    <div key={cat.id} className="relative flex items-center group gap-1">
                         <button
                             type="button"
                             onClick={() => onSelectCategory(cat.id)}
@@ -74,21 +79,29 @@ export function CategoryTabList({
                                     {cat.topic_count}
                                 </span>
                             )}
-                            {isSelected && (
+                        </button>
+                        {isSelected && (
+                            <span className="flex items-center shrink-0">
                                 <button
                                     type="button"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setDeletingCat(cat);
-                                    }}
-                                    className="ml-1 p-0.5 rounded text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                    onClick={() => setEditingCat(cat)}
+                                    className="p-0.5 rounded text-muted-foreground/60 hover:text-primary hover:bg-primary/10 transition-colors"
+                                    title={`Edit category "${cat.name}"`}
+                                    aria-label={`Edit category ${cat.name}`}
+                                >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setDeletingCat(cat)}
+                                    className="p-0.5 rounded text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-colors"
                                     title={`Delete category "${cat.name}"`}
                                     aria-label={`Delete category ${cat.name}`}
                                 >
                                     <Trash2 className="w-3.5 h-3.5" />
                                 </button>
-                            )}
-                        </button>
+                            </span>
+                        )}
                     </div>
                 );
             })}
@@ -118,6 +131,14 @@ export function CategoryTabList({
                 }}
                 isPending={isDeleting}
             />
+
+            <CategoryFormModal
+                isOpen={editingCat !== null}
+                onClose={() => setEditingCat(null)}
+                editingCategory={editingCat}
+            />
+
+            <CategoryFormModal isOpen={isCategoryModalOpen} onClose={closeCategoryModal} />
         </div>
     );
 }

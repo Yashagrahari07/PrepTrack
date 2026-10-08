@@ -229,9 +229,12 @@ type UpdateTopicRequest struct {
 	Confidence *int    `json:"confidence"`
 	NotesMd    *string `json:"notes_md"`
 	Position   *int    `json:"position"`
+	CategoryID *string `json:"category_id"`
 }
 
-// Update modifies topic details with side-effect (creates revision when status -> LEARNED)
+// Update modifies topic details with side-effect (creates revision when status -> LEARNED).
+// A changed category_id moves the topic: subtopics become top-level in the target
+// category, direct children follow a moved parent, and position appends at the end.
 func (h *TopicHandler) Update(c echo.Context) error {
 	userID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -242,10 +245,21 @@ func (h *TopicHandler) Update(c echo.Context) error {
 	if topicID == "" {
 		return sendError(c, http.StatusBadRequest, "MISSING_TOPIC_ID", "Topic ID is required")
 	}
+	if !isValidUUID(topicID) {
+		return sendError(c, http.StatusBadRequest, "INVALID_REQUEST_BODY", "Topic ID is not a valid UUID")
+	}
 
 	var req UpdateTopicRequest
 	if err := c.Bind(&req); err != nil {
 		return sendError(c, http.StatusBadRequest, "INVALID_REQUEST_BODY", "Invalid JSON payload")
+	}
+
+	// Normalize "" category to absent, mirroring Create/Reorder
+	if req.CategoryID != nil && *req.CategoryID == "" {
+		req.CategoryID = nil
+	}
+	if req.CategoryID != nil && !isValidUUID(*req.CategoryID) {
+		return sendError(c, http.StatusBadRequest, "INVALID_REQUEST_BODY", "Category ID is not a valid UUID")
 	}
 
 	if req.Status != nil {
@@ -272,29 +286,134 @@ func (h *TopicHandler) Update(c echo.Context) error {
 	ctx := c.Request().Context()
 	var topic model.Topic
 
-	err := h.pool.QueryRow(ctx,
-		`UPDATE topics
-		 SET title = COALESCE($1, title),
-		     status = COALESCE($2, status),
-		     confidence = COALESCE($3, confidence),
-		     notes_md = COALESCE($4, notes_md),
-		     position = COALESCE($5, position),
-		     updated_at = NOW()
-		 WHERE id = $6 AND user_id = $7
-		 RETURNING id, user_id, category_id, parent_id, title, status, confidence, notes_md, position, created_at, updated_at`,
-		req.Title, req.Status, req.Confidence, req.NotesMd, req.Position, topicID, userID,
-	).Scan(
-		&topic.ID, &topic.UserID, &topic.CategoryID, &topic.ParentID,
-		&topic.Title, &topic.Status, &topic.Confidence, &topic.NotesMd, &topic.Position,
-		&topic.CreatedAt, &topic.UpdatedAt,
-	)
+	// Lock-then-compare: read the current row to decide plain update vs move.
+	tx, err := h.pool.Begin(ctx)
+	if err != nil {
+		return sendError(c, http.StatusInternalServerError, "DATABASE_ERROR", "Database connection error")
+	}
+	defer tx.Rollback(ctx)
 
+	var curCategoryID string
+	var curParentID *string
+	err = tx.QueryRow(ctx,
+		"SELECT category_id, parent_id FROM topics WHERE id = $1 AND user_id = $2 FOR UPDATE",
+		topicID, userID,
+	).Scan(&curCategoryID, &curParentID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return sendError(c, http.StatusNotFound, "TOPIC_NOT_FOUND", "Topic not found or unauthorized")
 		}
-		return sendError(c, http.StatusInternalServerError, "DATABASE_ERROR", "Failed to update topic")
+		return sendError(c, http.StatusInternalServerError, "DATABASE_ERROR", "Failed to fetch topic")
 	}
+
+	moving := req.CategoryID != nil && *req.CategoryID != curCategoryID
+
+	if !moving {
+		err = tx.QueryRow(ctx,
+			`UPDATE topics
+			 SET title = COALESCE($1, title),
+			     status = COALESCE($2, status),
+			     confidence = COALESCE($3, confidence),
+			     notes_md = COALESCE($4, notes_md),
+			     position = COALESCE($5, position),
+			     updated_at = NOW()
+			 WHERE id = $6 AND user_id = $7
+			 RETURNING id, user_id, category_id, parent_id, title, status, confidence, notes_md, position, created_at, updated_at`,
+			req.Title, req.Status, req.Confidence, req.NotesMd, req.Position, topicID, userID,
+		).Scan(
+			&topic.ID, &topic.UserID, &topic.CategoryID, &topic.ParentID,
+			&topic.Title, &topic.Status, &topic.Confidence, &topic.NotesMd, &topic.Position,
+			&topic.CreatedAt, &topic.UpdatedAt,
+		)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return sendError(c, http.StatusNotFound, "TOPIC_NOT_FOUND", "Topic not found or unauthorized")
+			}
+			return sendError(c, http.StatusInternalServerError, "DATABASE_ERROR", "Failed to update topic")
+		}
+	} else {
+		newCategoryID := *req.CategoryID
+
+		var categoryExists bool
+		err = tx.QueryRow(ctx,
+			"SELECT EXISTS(SELECT 1 FROM categories WHERE id = $1 AND user_id = $2)",
+			newCategoryID, userID,
+		).Scan(&categoryExists)
+		if err != nil || !categoryExists {
+			return sendError(c, http.StatusBadRequest, "INVALID_CATEGORY", "Target category does not exist or is unauthorized")
+		}
+
+		// Depth guard: refuse moves whose subtree goes deeper than 2 levels,
+		// which list nesting cannot render.
+		var deepCount int
+		err = tx.QueryRow(ctx,
+			`SELECT COUNT(*) FROM topics child
+			 JOIN topics grandchild ON grandchild.parent_id = child.id
+			 WHERE child.parent_id = $1 AND child.user_id = $2`,
+			topicID, userID,
+		).Scan(&deepCount)
+		if err != nil {
+			return sendError(c, http.StatusInternalServerError, "DATABASE_ERROR", "Failed to verify topic depth")
+		}
+		if deepCount > 0 {
+			return sendError(c, http.StatusBadRequest, "INVALID_PARENT_TOPIC", "Cannot move a topic with nested subtopics")
+		}
+
+		var maxPos int
+		err = tx.QueryRow(ctx,
+			`SELECT COALESCE(MAX(position), -1) FROM topics
+			 WHERE user_id = $1 AND category_id = $2 AND parent_id IS NULL`,
+			userID, newCategoryID,
+		).Scan(&maxPos)
+		if err != nil {
+			return sendError(c, http.StatusInternalServerError, "DATABASE_ERROR", "Failed to determine topic position")
+		}
+
+		// Cross-category moves always land top-level (explicit position is ignored);
+		// direct children follow a moved parent, keeping their positions.
+		err = tx.QueryRow(ctx,
+			`UPDATE topics
+			 SET title = COALESCE($1, title),
+			     status = COALESCE($2, status),
+			     confidence = COALESCE($3, confidence),
+			     notes_md = COALESCE($4, notes_md),
+			     category_id = $5,
+			     parent_id = NULL,
+			     position = $6,
+			     updated_at = NOW()
+			 WHERE id = $7 AND user_id = $8
+			 RETURNING id, user_id, category_id, parent_id, title, status, confidence, notes_md, position, created_at, updated_at`,
+			req.Title, req.Status, req.Confidence, req.NotesMd, newCategoryID, maxPos+1, topicID, userID,
+		).Scan(
+			&topic.ID, &topic.UserID, &topic.CategoryID, &topic.ParentID,
+			&topic.Title, &topic.Status, &topic.Confidence, &topic.NotesMd, &topic.Position,
+			&topic.CreatedAt, &topic.UpdatedAt,
+		)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return sendError(c, http.StatusNotFound, "TOPIC_NOT_FOUND", "Topic not found or unauthorized")
+			}
+			return sendError(c, http.StatusInternalServerError, "DATABASE_ERROR", "Failed to move topic")
+		}
+
+		_, err = tx.Exec(ctx,
+			"UPDATE topics SET category_id = $1 WHERE parent_id = $2 AND user_id = $3",
+			newCategoryID, topicID, userID,
+		)
+		if err != nil {
+			return sendError(c, http.StatusInternalServerError, "DATABASE_ERROR", "Failed to move subtopics")
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return sendError(c, http.StatusInternalServerError, "DATABASE_ERROR", "Failed to commit topic update")
+	}
+
+	// Refresh the category name for the response so moved topics need no refetch
+	_ = h.pool.QueryRow(ctx,
+		"SELECT name FROM categories WHERE id = $1",
+		topic.CategoryID,
+	).Scan(&topic.CategoryName)
 
 	// SIDE-EFFECT: If status transitioned to 'LEARNED', trigger first scheduled revision for tomorrow if no pending revision exists
 	if req.Status != nil && *req.Status == "LEARNED" {

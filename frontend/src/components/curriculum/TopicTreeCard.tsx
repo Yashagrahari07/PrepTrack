@@ -7,6 +7,7 @@ import {
     BookOpen,
     Clock,
     Plus,
+    Pencil,
     Trash2,
     CheckCircle2,
     Circle,
@@ -30,6 +31,7 @@ interface TopicTreeCardProps {
     topic: Topic;
     categoryColor?: string;
     onAddSubtopic: (parentTopic: Topic) => void;
+    onRequestEdit: (topic: Topic) => void;
     onRequestDelete: (kind: 'topic' | 'subtopic', id: string, title: string) => void;
     dragHandle?: React.ReactNode;
     isFirst?: boolean;
@@ -86,6 +88,7 @@ interface SubtopicRowProps {
     onMoveUp: () => void;
     onMoveDown: () => void;
     onStatusChange: (id: string, status: TopicStatus) => void;
+    onRequestEdit: (sub: Topic) => void;
     onRequestDelete: (id: string, title: string) => void;
 }
 
@@ -99,6 +102,7 @@ function SubtopicRow({
     onMoveUp,
     onMoveDown,
     onStatusChange,
+    onRequestEdit,
     onRequestDelete,
 }: SubtopicRowProps) {
     const subStatus = statusBadgeStyles[sub.status] || statusBadgeStyles.NOT_STARTED;
@@ -170,9 +174,19 @@ function SubtopicRow({
 
                 <button
                     type="button"
+                    onClick={() => onRequestEdit(sub)}
+                    className="p-1 rounded-lg hover:bg-primary/15 text-muted-foreground hover:text-primary transition-colors"
+                    title="Edit subtopic"
+                    aria-label={`Edit subtopic ${sub.title}`}
+                >
+                    <Pencil className="w-3.5 h-3.5" />
+                </button>
+                <button
+                    type="button"
                     onClick={() => onRequestDelete(sub.id, sub.title)}
                     className="p-1 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
                     title="Delete subtopic"
+                    aria-label={`Delete subtopic ${sub.title}`}
                 >
                     <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -185,6 +199,7 @@ export function TopicTreeCard({
     topic,
     categoryColor = '#6366f1',
     onAddSubtopic,
+    onRequestEdit,
     onRequestDelete,
     dragHandle,
     isFirst = false,
@@ -371,12 +386,24 @@ export function TopicTreeCard({
                         <Plus className="w-4 h-4" />
                     </button>
 
+                    {/* Edit */}
+                    <button
+                        type="button"
+                        onClick={() => onRequestEdit(topic)}
+                        className="p-1.5 rounded-xl hover:bg-primary/15 text-muted-foreground hover:text-primary transition-colors"
+                        title="Edit topic"
+                        aria-label={`Edit topic ${topic.title}`}
+                    >
+                        <Pencil className="w-4 h-4" />
+                    </button>
+
                     {/* Delete */}
                     <button
                         type="button"
                         onClick={() => onRequestDelete('topic', topic.id, topic.title)}
                         className="p-1.5 rounded-xl hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
                         title="Delete topic"
+                        aria-label={`Delete topic ${topic.title}`}
                     >
                         <Trash2 className="w-4 h-4" />
                     </button>
@@ -411,6 +438,7 @@ export function TopicTreeCard({
                                             onMoveUp={() => subOrder.onMove(sub.id, -1)}
                                             onMoveDown={() => subOrder.onMove(sub.id, 1)}
                                             onStatusChange={handleSubStatusChange}
+                                            onRequestEdit={onRequestEdit}
                                             onRequestDelete={(id, title) => onRequestDelete('subtopic', id, title)}
                                         />
                                     )}
@@ -430,6 +458,7 @@ export function TopicTreeCard({
                                 onMoveUp={() => {}}
                                 onMoveDown={() => {}}
                                 onStatusChange={handleSubStatusChange}
+                                onRequestEdit={onRequestEdit}
                                 onRequestDelete={(id, title) => onRequestDelete('subtopic', id, title)}
                             />
                         ))

@@ -11,7 +11,6 @@ import { GOAL_LABELS } from '@/lib/constants';
 import { CategoryTabList } from '@/components/curriculum/CategoryTabList';
 import { CategoryTopicGroup } from '@/components/curriculum/CategoryTopicGroup';
 import { TopicFormModal } from '@/components/curriculum/TopicFormModal';
-import { CategoryFormModal } from '@/components/curriculum/CategoryFormModal';
 import { useAppStore } from '@/stores/app/app.store';
 import type { PendingDelete } from '@/components/curriculum/TopicTreeCard';
 import type { Topic } from '@/lib/types';
@@ -42,12 +41,11 @@ export default function CurriculumPage() {
     const topicModalParent = useAppStore((s) => s.topicModalParent);
     const topicModalCategoryId = useAppStore((s) => s.topicModalCategoryId);
     const openTopicModal = useAppStore((s) => s.openTopicModal);
+    const openEditTopicModal = useAppStore((s) => s.openEditTopicModal);
     const closeTopicModal = useAppStore((s) => s.closeTopicModal);
 
     // ── UI slice – Category modal ──────────────────────────────────────────
-    const isCategoryModalOpen = useAppStore((s) => s.isCategoryModalOpen);
     const openCategoryModal = useAppStore((s) => s.openCategoryModal);
-    const closeCategoryModal = useAppStore((s) => s.closeCategoryModal);
 
     // The All tab is an explicit null choice; a fresh null still defaults to
     // the first category (previous behavior) until the user picks All.
@@ -258,6 +256,7 @@ export default function CurriculumPage() {
                                         color={g.color}
                                         topics={g.topics}
                                         onRequestDelete={handleRequestDelete}
+                                        onRequestEdit={openEditTopicModal}
                                         onAddSubtopic={handleOpenAddSubtopic}
                                     />
                                 )}
@@ -294,6 +293,7 @@ export default function CurriculumPage() {
                     color={activeCategory?.color}
                     topics={filteredTopics}
                     onRequestDelete={handleRequestDelete}
+                    onRequestEdit={openEditTopicModal}
                     onAddSubtopic={handleOpenAddSubtopic}
                 />
             )}
@@ -319,11 +319,6 @@ export default function CurriculumPage() {
                 parentTopic={topicModalParent}
             />
 
-            {/* Create Category Modal */}
-            <CategoryFormModal
-                isOpen={isCategoryModalOpen}
-                onClose={closeCategoryModal}
-            />
         </div>
     );
 }

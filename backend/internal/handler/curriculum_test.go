@@ -47,18 +47,48 @@ func TestTopic_Validation(t *testing.T) {
 	})
 
 	t.Run("Update Topic Invalid Status", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPatch, "/api/topics/t-1", strings.NewReader(`{"status": "INVALID_STATUS"}`))
+		req := httptest.NewRequest(http.MethodPatch, "/api/topics/11111111-1111-1111-1111-111111111111", strings.NewReader(`{"status": "INVALID_STATUS"}`))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 		c.SetParamNames("id")
-		c.SetParamValues("t-1")
+		c.SetParamValues("11111111-1111-1111-1111-111111111111")
 		c.Set(middleware.UserIDContextKey, "test-user-123")
 
 		err := topicH.Update(c)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 		assert.Contains(t, rec.Body.String(), "INVALID_STATUS")
+	})
+
+	t.Run("Update Topic Malformed ID", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPatch, "/api/topics/not-a-uuid", strings.NewReader(`{"title": "New"}`))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetParamNames("id")
+		c.SetParamValues("not-a-uuid")
+		c.Set(middleware.UserIDContextKey, "test-user-123")
+
+		err := topicH.Update(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		assert.Contains(t, rec.Body.String(), "INVALID_REQUEST_BODY")
+	})
+
+	t.Run("Update Topic Malformed Category ID", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPatch, "/api/topics/11111111-1111-1111-1111-111111111111", strings.NewReader(`{"category_id": "bad"}`))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetParamNames("id")
+		c.SetParamValues("11111111-1111-1111-1111-111111111111")
+		c.Set(middleware.UserIDContextKey, "test-user-123")
+
+		err := topicH.Update(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		assert.Contains(t, rec.Body.String(), "INVALID_REQUEST_BODY")
 	})
 }
 

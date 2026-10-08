@@ -132,9 +132,10 @@ export function useUpdateCategory() {
             updateCategoryApi(id, data),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: queryKeys.categories.all });
+            qc.invalidateQueries({ queryKey: queryKeys.categories.tree() });
             toast.success('Category updated!');
         },
-        onError: () => toast.error('Failed to update category'),
+        onError: (err) => toast.error(getErrorMessage(err) || 'Failed to update category'),
     });
 }
 
@@ -176,17 +177,18 @@ export function useUpdateTopic() {
             data,
         }: {
             id: string;
-            data: { status?: TopicStatus; confidence?: number; notes_md?: string; title?: string };
+            data: { status?: TopicStatus; confidence?: number; notes_md?: string; title?: string; category_id?: string };
         }) => updateTopicApi(id, data),
         onSuccess: (updated) => {
             qc.invalidateQueries({ queryKey: queryKeys.categories.all });
+            qc.invalidateQueries({ queryKey: queryKeys.categories.tree() });
             qc.invalidateQueries({ queryKey: queryKeys.categories.byId(updated.category_id) });
             qc.invalidateQueries({ queryKey: queryKeys.topics.byId(updated.id) });
             qc.invalidateQueries({ queryKey: queryKeys.dashboard.all });
             qc.invalidateQueries({ queryKey: queryKeys.revisions.all });
             toast.success('Topic updated! 🎯');
         },
-        onError: () => toast.error('Failed to update topic'),
+        onError: (err) => toast.error(getErrorMessage(err) || 'Failed to update topic'),
     });
 }
 

@@ -208,6 +208,11 @@ func (h *ResourceHandler) Update(c echo.Context) error {
 		req.URL = &trimmed
 	}
 
+	// Parity with Create: non-positive durations fall back to the 30-minute default
+	if req.EstMinutes != nil && *req.EstMinutes <= 0 {
+		*req.EstMinutes = 30
+	}
+
 	ctx := c.Request().Context()
 	var res model.Resource
 

@@ -1,14 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, FolderPlus } from 'lucide-react';
+import { X, FolderPlus, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useCreateCategory } from '@/hooks/useCurriculum';
+import { useCreateCategory, useUpdateCategory } from '@/hooks/useCurriculum';
+import type { Category } from '@/lib/types';
 
 interface CategoryFormModalProps {
     isOpen: boolean;
     onClose: () => void;
+    editingCategory?: Category | null;
 }
 
 const colorPresets = [
@@ -22,10 +24,30 @@ const colorPresets = [
     { label: 'Orange', hex: '#f97316' },
 ];
 
-export function CategoryFormModal({ isOpen, onClose }: CategoryFormModalProps) {
-    const { mutate: createCategory, isPending } = useCreateCategory();
+export function CategoryFormModal({ isOpen, onClose, editingCategory = null }: CategoryFormModalProps) {
+    const { mutate: createCategory, isPending: isCreating } = useCreateCategory();
+    const { mutate: updateCategory, isPending: isUpdating } = useUpdateCategory();
+    const isPending = isCreating || isUpdating;
+    const isEdit = editingCategory !== null;
     const [name, setName] = useState('');
     const [color, setColor] = useState('#6366f1');
+    const initRef = useRef<string | null>(null);
+
+    // Edit-mode prefill, once per opened category (never clobbered by refetches)
+    useEffect(() => {
+        if (isOpen && editingCategory && initRef.current !== editingCategory.id) {
+            initRef.current = editingCategory.id;
+            setName(editingCategory.name);
+            setColor(editingCategory.color);
+        }
+        if (!isOpen) {
+            initRef.current = null;
+            if (!editingCategory) {
+                setName('');
+                setColor('#6366f1');
+            }
+        }
+    }, [isOpen, editingCategory]);
 
     // Prevent closing on escape key when request is pending
     useEffect(() => {
@@ -50,6 +72,18 @@ export function CategoryFormModal({ isOpen, onClose }: CategoryFormModalProps) {
         e.preventDefault();
         if (!name.trim() || isPending) return;
 
+        if (isEdit && editingCategory) {
+            if (name.trim() === editingCategory.name && color === editingCategory.color) {
+                onClose();
+                return;
+            }
+            updateCategory(
+                { id: editingCategory.id, data: { name: name.trim(), color } },
+                { onSuccess: () => onClose() },
+            );
+            return;
+        }
+
         createCategory(
             { name: name.trim(), color },
             {
@@ -73,13 +107,16 @@ export function CategoryFormModal({ isOpen, onClose }: CategoryFormModalProps) {
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-2.5">
                         <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
-                            <FolderPlus className="w-5 h-5" />
+                            {isEdit ? <Pencil className="w-5 h-5" /> : <FolderPlus className="w-5 h-5" />}
                         </div>
-                        <h2 className="text-base font-bold text-foreground">Create Category</h2>
+                        <h2 className="text-base font-bold text-foreground">
+                            {isEdit ? 'Edit Category' : 'Create Category'}
+                        </h2>
                     </div>
                     <button
                         onClick={onClose}
                         disabled={isPending}
+                        aria-label="Close"
                         className="text-muted-foreground hover:text-foreground p-1 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         title="Close"
                     >
@@ -126,15 +163,31 @@ export function CategoryFormModal({ isOpen, onClose }: CategoryFormModalProps) {
                         </div>
                     </div>
 
-                    <Button
-                        type="submit"
-                        size="lg"
-                        isLoading={isPending}
-                        loadingText="Creating Category..."
-                        className="mt-2"
-                    >
-                        Create Category
-                    </Button>
+                    {isEdit ? (
+                        <div className="flex justify-end gap-2 mt-2">
+                            <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                size="lg"
+                                isLoading={isPending}
+                                loadingText="Updating..."
+                            >
+                                Update
+                            </Button>
+                        </div>
+                    ) : (
+                        <Button
+                            type="submit"
+                            size="lg"
+                            isLoading={isPending}
+                            loadingText="Creating Category..."
+                            className="mt-2"
+                        >
+                            Create Category
+                        </Button>
+                    )}
                 </form>
             </div>
         </div>,

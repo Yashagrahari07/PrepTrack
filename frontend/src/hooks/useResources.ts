@@ -51,7 +51,7 @@ export function useUpdateResource(topicId: string) {
             qc.invalidateQueries({ queryKey: queryKeys.topics.resources(topicId) });
             toast.success('Resource updated!');
         },
-        onError: () => toast.error('Failed to update resource'),
+        onError: (err) => toast.error(getErrorMessage(err) || 'Failed to update resource'),
     });
 }
 

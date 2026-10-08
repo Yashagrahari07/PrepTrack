@@ -27,7 +27,9 @@ export interface UISlice {
     isTopicModalOpen: boolean;
     topicModalParent: Topic | null;
     topicModalCategoryId: string | null;
+    editingTopic: Topic | null;
     openTopicModal: (options?: { categoryId?: string; parentTopic?: Topic }) => void;
+    openEditTopicModal: (topic: Topic) => void;
     closeTopicModal: () => void;
 
     // Command Menu
@@ -79,17 +81,27 @@ export const createUISlice: StateCreator<UISlice, [], [], UISlice> = (set) => ({
     isTopicModalOpen: false,
     topicModalParent: null,
     topicModalCategoryId: null,
+    editingTopic: null,
     openTopicModal: (options) =>
         set({
             isTopicModalOpen: true,
             topicModalCategoryId: options?.categoryId ?? null,
             topicModalParent: options?.parentTopic ?? null,
+            editingTopic: null,
+        }),
+    openEditTopicModal: (topic) =>
+        set({
+            isTopicModalOpen: true,
+            topicModalCategoryId: topic.category_id,
+            topicModalParent: null,
+            editingTopic: topic,
         }),
     closeTopicModal: () =>
         set({
             isTopicModalOpen: false,
             topicModalParent: null,
             topicModalCategoryId: null,
+            editingTopic: null,
         }),
 
     // Command Menu

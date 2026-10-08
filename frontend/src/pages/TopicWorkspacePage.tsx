@@ -1,13 +1,19 @@
 import { useParams } from 'react-router-dom';
-import { useTopic } from '@/hooks/useCurriculum';
+import { useCategories, useTopic } from '@/hooks/useCurriculum';
 import { TopicHeader } from '@/components/workspace/TopicHeader';
 import { ResourceList } from '@/components/workspace/ResourceList';
 import { MarkdownNoteEditor } from '@/components/workspace/MarkdownNoteEditor';
 import { StudyLogTimeline } from '@/components/workspace/StudyLogTimeline';
+import { TopicFormModal } from '@/components/curriculum/TopicFormModal';
+import { useAppStore } from '@/stores/app/app.store';
 
 export default function TopicWorkspacePage() {
     const { id } = useParams<{ id: string }>();
     const { data: topic, isLoading } = useTopic(id || null);
+    const { data: rawCategories } = useCategories();
+    const categories = Array.isArray(rawCategories) ? rawCategories : [];
+    const isTopicModalOpen = useAppStore((s) => s.isTopicModalOpen);
+    const closeTopicModal = useAppStore((s) => s.closeTopicModal);
 
     if (isLoading) {
         return (
@@ -47,6 +53,13 @@ export default function TopicWorkspacePage() {
                     <MarkdownNoteEditor topicId={topic.id} initialNotes={topic.notes_md || ''} />
                 </div>
             </div>
+
+            {/* Edit Topic Modal (store-owned edit state) */}
+            <TopicFormModal
+                isOpen={isTopicModalOpen}
+                onClose={closeTopicModal}
+                categories={categories}
+            />
         </div>
     );
 }
