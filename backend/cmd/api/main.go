@@ -62,6 +62,7 @@ func main() {
 	dashH := handler.NewDashboardHandler(pool)
 	revH := handler.NewRevisionHandler(pool)
 	statsH := handler.NewStatsHandler(pool)
+	metaH := handler.NewMetadataHandler(nil, "")
 
 	// Rate-limited public auth group (max 10 requests/min per IP)
 	authGroup := e.Group("/api/auth", middleware.AuthRateLimiter())
@@ -113,6 +114,9 @@ func main() {
 	// Study Logs routes
 	api.GET("/topics/:id/logs", logH.ListByTopic)
 	api.POST("/study-logs", logH.Create)
+
+	// Metadata routes (prefill helpers, nothing persisted)
+	api.GET("/metadata/youtube", metaH.Lookup)
 
 	// Base API test route
 	api.GET("/ping", func(c echo.Context) error {

@@ -35,6 +35,10 @@ export const queryKeys = {
     settings: {
         all: ['settings'] as const,
     },
+    metadata: {
+        all: ['metadata'] as const,
+        youtube: (url: string) => [...queryKeys.metadata.all, 'youtube', url] as const,
+    },
     stats: {
         all: ['stats'] as const,
     },

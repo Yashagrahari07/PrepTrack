@@ -9,6 +9,7 @@ import {
     updateResourceApi,
     deleteResourceApi,
     reorderResourcesApi,
+    getYoutubeMetadataApi,
 } from '@/api/resources.api';
 import type { CreateResourceRequest, UpdateResourceRequest } from '@/api/resources.api';
 import type { Resource } from '@/lib/types';
@@ -67,6 +68,19 @@ export function useDeleteResource(topicId: string) {
             toast.success('Resource deleted');
         },
         onError: (err) => toast.error(getErrorMessage(err) || 'Failed to delete resource'),
+    });
+}
+
+// Prefetch public YouTube title metadata for form prefill.
+// Query-based (no global error toast): failures stay silent for the caller
+// to render inline. Nothing is persisted by this call.
+export function useYoutubeMetadata(url: string | null, enabled: boolean) {
+    return useQuery({
+        queryKey: url ? queryKeys.metadata.youtube(url) : ['metadata', 'youtube', 'none'],
+        queryFn: () => getYoutubeMetadataApi(url!),
+        enabled: enabled && Boolean(url),
+        retry: false,
+        staleTime: 1000 * 60 * 5,
     });
 }
 

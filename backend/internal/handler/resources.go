@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"math"
 	"net/http"
 	"strings"
 
@@ -60,11 +61,19 @@ func (h *ResourceHandler) List(c echo.Context) error {
 }
 
 type CreateResourceRequest struct {
-	Type       string `json:"type"`
-	Title      string `json:"title"`
-	URL        string `json:"url"`
-	EstMinutes int    `json:"est_minutes"`
-	Status     string `json:"status"`
+	Type       string  `json:"type"`
+	Title      string  `json:"title"`
+	URL        string  `json:"url"`
+	EstMinutes float64 `json:"est_minutes"`
+	Status     string  `json:"status"`
+}
+
+// roundToTenth normalizes fractional minutes; non-finite input falls back to 30.
+func roundToTenth(x float64) float64 {
+	if math.IsNaN(x) || math.IsInf(x, 0) {
+		return 30
+	}
+	return math.Round(x*10) / 10
 }
 
 // Create inserts a resource with a strict MAX 3 PER TOPIC guard
@@ -97,6 +106,8 @@ func (h *ResourceHandler) Create(c echo.Context) error {
 
 	if req.EstMinutes <= 0 {
 		req.EstMinutes = 30
+	} else {
+		req.EstMinutes = roundToTenth(req.EstMinutes)
 	}
 
 	if req.Status == "" {
@@ -154,11 +165,11 @@ func (h *ResourceHandler) Create(c echo.Context) error {
 }
 
 type UpdateResourceRequest struct {
-	Type       *string `json:"type"`
-	Title      *string `json:"title"`
-	URL        *string `json:"url"`
-	EstMinutes *int    `json:"est_minutes"`
-	Status     *string `json:"status"`
+	Type       *string  `json:"type"`
+	Title      *string  `json:"title"`
+	URL        *string  `json:"url"`
+	EstMinutes *float64 `json:"est_minutes"`
+	Status     *string  `json:"status"`
 }
 
 // Update modifies an existing resource
@@ -209,8 +220,12 @@ func (h *ResourceHandler) Update(c echo.Context) error {
 	}
 
 	// Parity with Create: non-positive durations fall back to the 30-minute default
-	if req.EstMinutes != nil && *req.EstMinutes <= 0 {
-		*req.EstMinutes = 30
+	if req.EstMinutes != nil {
+		if *req.EstMinutes <= 0 {
+			*req.EstMinutes = 30
+		} else {
+			*req.EstMinutes = roundToTenth(*req.EstMinutes)
+		}
 	}
 
 	ctx := c.Request().Context()

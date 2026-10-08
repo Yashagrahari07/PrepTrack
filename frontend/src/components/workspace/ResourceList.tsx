@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { toast } from 'sonner';
 import {
     ExternalLink,
     Plus,
@@ -15,6 +16,7 @@ import {
     X,
     ChevronUp,
     ChevronDown,
+    Loader2,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -29,9 +31,11 @@ import {
     useUpdateResource,
     useDeleteResource,
     useReorderResources,
+    useYoutubeMetadata,
 } from '@/hooks/useResources';
 import type { Resource, ResourceType, ResourceStatus } from '@/lib/types';
-import { cn } from '@/lib/utils';
+import { cn, formatMinutes } from '@/lib/utils';
+import { hasPlaylistParam, isYouTubeUrl } from '@/lib/youtube';
 
 interface ResourceListProps {
     topicId: string;
@@ -116,15 +120,24 @@ export function ResourceList({ topicId }: ResourceListProps) {
     const [title, setTitle] = useState('');
     const [url, setUrl] = useState('');
     const [type, setType] = useState<ResourceType>('DEV_BLOG');
+    const [estHours, setEstHours] = useState(0);
     const [estMinutes, setEstMinutes] = useState(30);
     const isEdit = editingResource !== null;
+
+    const resetPrefetchRefs = () => {
+        lastAutoTitleRef.current = null;
+        titleTouchedRef.current = false;
+        initialUrlRef.current = '';
+    };
 
     const openCreateModal = () => {
         setEditingResource(null);
         setTitle('');
         setUrl('');
         setType('DEV_BLOG');
+        setEstHours(0);
         setEstMinutes(30);
+        resetPrefetchRefs();
         setIsAddModalOpen(true);
     };
 
@@ -133,15 +146,71 @@ export function ResourceList({ topicId }: ResourceListProps) {
         setTitle(res.title);
         setUrl(res.url);
         setType(res.type);
-        setEstMinutes(res.est_minutes);
+        setEstHours(Math.floor(res.est_minutes / 60));
+        setEstMinutes(Math.round((res.est_minutes % 60) * 10) / 10);
+        resetPrefetchRefs();
+        initialUrlRef.current = res.url;
         setIsAddModalOpen(true);
     };
 
     const closeModal = () => {
         if (isPending) return;
-        closeModal();
+        setIsAddModalOpen(false);
         setEditingResource(null);
+        resetPrefetchRefs();
+        setDebouncedUrl(null);
     };
+
+    const totalEstMinutes = () => {
+        const h = Number.isFinite(estHours) ? Math.max(0, Math.floor(estHours)) : 0;
+        const m = Number.isFinite(estMinutes) ? Math.max(0, estMinutes) : 0;
+        const total = Math.round((h * 60 + m) * 10) / 10;
+        return total > 0 ? total : 30;
+    };
+
+    // ── YouTube title prefetch (titles only; user text is never overwritten) ──
+    // Each pasted URL gets its own query cache key, so a slow earlier fetch can
+    // never clobber a later paste: responses land in different cache entries and
+    // only the subscribed (latest) one is ever applied below.
+    const lastAutoTitleRef = useRef<string | null>(null);
+    const titleTouchedRef = useRef(false);
+    const initialUrlRef = useRef('');
+    const [debouncedUrl, setDebouncedUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!isAddModalOpen) {
+            setDebouncedUrl(null);
+            return;
+        }
+        if (type !== 'YOUTUBE_VIDEO' && type !== 'YOUTUBE_PLAYLIST') {
+            setDebouncedUrl(null);
+            return;
+        }
+        if (!isYouTubeUrl(url) || url.trim() === initialUrlRef.current) {
+            setDebouncedUrl(null);
+            return;
+        }
+        const timer = setTimeout(() => setDebouncedUrl(url.trim()), 600);
+        return () => clearTimeout(timer);
+    }, [url, type, isAddModalOpen]);
+
+    const prefetch = useYoutubeMetadata(debouncedUrl, isAddModalOpen && debouncedUrl !== null);
+
+    useEffect(() => {
+        if (!prefetch.data || !debouncedUrl) return;
+        const fetched = prefetch.data.title.trim();
+        if (!fetched || titleTouchedRef.current) return;
+        if (title.trim() && title !== lastAutoTitleRef.current) return;
+        setTitle(fetched);
+        lastAutoTitleRef.current = fetched;
+        toast.success(
+            prefetch.data.kind === 'playlist' ? 'Playlist title fetched' : 'Video details fetched',
+            { id: 'yt-prefetch' },
+        );
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [prefetch.data, debouncedUrl]);
+
+    const showTypeHint = type === 'YOUTUBE_VIDEO' && hasPlaylistParam(url);
 
     // Handle Escape key
     useEffect(() => {
@@ -163,7 +232,7 @@ export function ResourceList({ topicId }: ResourceListProps) {
             updateResource(
                 {
                     id: editingResource.id,
-                    data: { type, title: title.trim(), url: url.trim(), est_minutes: estMinutes },
+                    data: { type, title: title.trim(), url: url.trim(), est_minutes: totalEstMinutes() },
                 },
                 {
                     onSuccess: () => {
@@ -176,7 +245,7 @@ export function ResourceList({ topicId }: ResourceListProps) {
         }
 
         createResource(
-            { type, title: title.trim(), url: url.trim(), est_minutes: estMinutes },
+            { type, title: title.trim(), url: url.trim(), est_minutes: totalEstMinutes() },
             {
                 onSuccess: () => {
                     setTitle('');
@@ -262,7 +331,7 @@ export function ResourceList({ topicId }: ResourceListProps) {
                                             <ExternalLink className="w-3 h-3 text-muted-foreground shrink-0" />
                                         </a>
                                         <span className="text-[10px] text-muted-foreground">
-                                            Est. {res.est_minutes} mins
+                                            Est. {formatMinutes(res.est_minutes)}
                                         </span>
                                     </div>
                                 </div>
@@ -409,7 +478,10 @@ export function ResourceList({ topicId }: ResourceListProps) {
                                         id="res-title"
                                         placeholder="e.g. Postgres Indexing Deep Dive"
                                         value={title}
-                                        onChange={(e) => setTitle(e.target.value)}
+                                        onChange={(e) => {
+                                            titleTouchedRef.current = true;
+                                            setTitle(e.target.value);
+                                        }}
                                         disabled={isPending}
                                         required
                                         autoFocus
@@ -427,19 +499,57 @@ export function ResourceList({ topicId }: ResourceListProps) {
                                         disabled={isPending}
                                         required
                                     />
+                                    <div className="min-h-[20px]" aria-live="polite">
+                                        {prefetch.isFetching && (
+                                            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                                <Loader2 className="w-3 h-3 animate-spin" />
+                                                Fetching details…
+                                            </p>
+                                        )}
+                                        {!prefetch.isFetching && prefetch.isError && debouncedUrl && (
+                                            <p className="text-xs text-muted-foreground">
+                                                Could not fetch details. Enter manually.
+                                            </p>
+                                        )}
+                                        {!prefetch.isFetching && showTypeHint && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setType('YOUTUBE_PLAYLIST')}
+                                                className="text-xs font-medium text-primary hover:underline"
+                                            >
+                                                Looks like a playlist. Switch type?
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
 
-                                <div className="flex flex-col gap-1.5">
-                                    <Label htmlFor="res-time">Est. Minutes</Label>
-                                    <Input
-                                        id="res-time"
-                                        type="number"
-                                        min={5}
-                                        max={600}
-                                        value={estMinutes}
-                                        onChange={(e) => setEstMinutes(Number(e.target.value))}
-                                        disabled={isPending}
-                                    />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="flex flex-col gap-1.5">
+                                        <Label htmlFor="res-hours">Hours</Label>
+                                        <Input
+                                            id="res-hours"
+                                            type="number"
+                                            min={0}
+                                            max={100}
+                                            value={estHours}
+                                            onChange={(e) => setEstHours(Number(e.target.value))}
+                                            disabled={isPending}
+                                        />
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                        <Label htmlFor="res-minutes">Minutes</Label>
+                                        <Input
+                                            id="res-minutes"
+                                            type="number"
+                                            min={0}
+                                            max={59.9}
+                                            step={0.5}
+                                            inputMode="decimal"
+                                            value={estMinutes}
+                                            onChange={(e) => setEstMinutes(Number(e.target.value))}
+                                            disabled={isPending}
+                                        />
+                                    </div>
                                 </div>
 
                                 <div className="flex justify-end gap-2 mt-2">

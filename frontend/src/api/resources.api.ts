@@ -40,6 +40,23 @@ export async function deleteResourceApi(resourceId: string): Promise<void> {
     await apiClient.delete(`/api/resources/${resourceId}`);
 }
 
+export interface YoutubeMetadata {
+    kind: 'video' | 'playlist';
+    title: string;
+    author?: string;
+    video_id?: string;
+    playlist_id?: string;
+}
+
+// GET /api/metadata/youtube?url= -> returns { metadata: YoutubeMetadata }
+// Title-only prefill helper. Nothing is persisted by this call.
+export async function getYoutubeMetadataApi(url: string): Promise<YoutubeMetadata> {
+    const response = await apiClient.get<{ metadata: YoutubeMetadata }>('/api/metadata/youtube', {
+        params: { url },
+    });
+    return response.data.metadata;
+}
+
 // POST /api/resources/reorder -> returns { resources: Resource[] }
 export async function reorderResourcesApi(data: { topic_id: string; ordered_ids: string[] }): Promise<Resource[]> {
     const response = await apiClient.post<{ resources?: Resource[] }>('/api/resources/reorder', data);
