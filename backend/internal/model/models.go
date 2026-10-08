@@ -79,6 +79,7 @@ type Resource struct {
 	URL        string    `json:"url"`
 	EstMinutes int       `json:"est_minutes"`
 	Status     string    `json:"status"`
+	Position   int       `json:"position"`
 	CreatedAt  time.Time `json:"created_at"`
 }
 

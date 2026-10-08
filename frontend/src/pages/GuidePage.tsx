@@ -19,7 +19,7 @@ const GUIDE_SECTIONS = [
         items: [
             {
                 title: 'Create your first category',
-                description: 'Categories organize your syllabus into high-level domains (e.g., "Data Structures", "System Design", "Algebra"). Click "New Category" in the Curriculum page, pick a color, and set its position.',
+                description: 'Categories organize your syllabus into high-level groups (e.g., "Data Structures", "System Design", "Algebra"). Click "New Category" in the Curriculum page, pick a color, and set its position.',
             },
             {
                 title: 'Add topics and subtopics',

@@ -1,14 +1,17 @@
+import { useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { queryKeys } from '@/api/queryKeys';
+import { getErrorMessage } from '@/lib/axios';
 import {
     getTopicResourcesApi,
     createResourceApi,
     updateResourceApi,
     deleteResourceApi,
-    type CreateResourceRequest,
-    type UpdateResourceRequest,
+    reorderResourcesApi,
 } from '@/api/resources.api';
+import type { CreateResourceRequest, UpdateResourceRequest } from '@/api/resources.api';
+import type { Resource } from '@/lib/types';
 
 // Fetch resources attached to a topic
 export function useTopicResources(topicId: string | null) {
@@ -63,6 +66,48 @@ export function useDeleteResource(topicId: string) {
             qc.invalidateQueries({ queryKey: queryKeys.categories.all });
             toast.success('Resource deleted');
         },
-        onError: () => toast.error('Failed to delete resource'),
+        onError: (err) => toast.error(getErrorMessage(err) || 'Failed to delete resource'),
+    });
+}
+
+// Reorder one topic's resources. Flat array on a single list key.
+export function useReorderResources(topicId: string | null) {
+    const qc = useQueryClient();
+    const inFlight = useRef(false);
+    const key = topicId ? queryKeys.topics.resources(topicId) : ['resources', 'none'];
+
+    return useMutation({
+        mutationFn: (orderedIds: string[]) => {
+            if (!topicId) return Promise.reject(new Error('REORDER_NO_TOPIC'));
+            if (inFlight.current) return Promise.reject(new Error('REORDER_IN_FLIGHT'));
+            inFlight.current = true;
+            return reorderResourcesApi({ topic_id: topicId, ordered_ids: orderedIds }).finally(() => {
+                inFlight.current = false;
+            });
+        },
+        onMutate: async (orderedIds: string[]) => {
+            await qc.cancelQueries({ queryKey: key });
+            const previous = qc.getQueryData<Resource[]>(key);
+            if (previous) {
+                const map = new Map(previous.map((r) => [r.id, r]));
+                qc.setQueryData(
+                    key,
+                    orderedIds.map((id) => map.get(id)).filter((r): r is Resource => Boolean(r)),
+                );
+            }
+            return { previous };
+        },
+        onError: (err, _vars, context) => {
+            if (err instanceof Error && (err.message === 'REORDER_IN_FLIGHT' || err.message === 'REORDER_NO_TOPIC')) {
+                return;
+            }
+            if (context?.previous) qc.setQueryData(key, context.previous);
+            toast.error(getErrorMessage(err) || 'Failed to update order');
+        },
+        onSuccess: (updated) => {
+            qc.setQueryData(key, updated);
+            qc.invalidateQueries({ queryKey: key });
+            toast.success('Order updated', { id: 'reorder-resources' });
+        },
     });
 }

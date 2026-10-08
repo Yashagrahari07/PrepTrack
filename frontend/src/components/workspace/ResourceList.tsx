@@ -12,15 +12,22 @@ import {
     Clock,
     Circle,
     X,
+    ChevronUp,
+    ChevronDown,
 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { DragHandle, SortableItem, SortableList } from '@/components/ui/SortableList';
+import { queryKeys } from '@/api/queryKeys';
 import {
     useTopicResources,
     useCreateResource,
     useUpdateResource,
     useDeleteResource,
+    useReorderResources,
 } from '@/hooks/useResources';
 import type { Resource, ResourceType, ResourceStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -59,12 +66,47 @@ const statusStyles: Record<ResourceStatus, { label: string; bg: string; text: st
 };
 
 export function ResourceList({ topicId }: ResourceListProps) {
+    const qc = useQueryClient();
     const { data: rawResources = [], isLoading } = useTopicResources(topicId);
     const resources = Array.isArray(rawResources) ? rawResources : [];
 
     const { mutate: createResource, isPending: isCreating } = useCreateResource(topicId);
     const { mutate: updateResource } = useUpdateResource(topicId);
-    const { mutate: deleteResource } = useDeleteResource(topicId);
+    const { mutate: deleteResource, isPending: isDeleting } = useDeleteResource(topicId);
+    const reorder = useReorderResources(topicId);
+    const [movingId, setMovingId] = useState<string | null>(null);
+    const [deletingRes, setDeletingRes] = useState<Resource | null>(null);
+    const reorderBusy = reorder.isPending;
+
+    const siblingIds = (): string[] => {
+        const cached = qc.getQueryData<Resource[]>(queryKeys.topics.resources(topicId));
+        return (cached ?? resources).map((r) => r.id);
+    };
+
+    const fireReorder = (orderedIds: string[], moving?: string) => {
+        if (reorder.isPending) return;
+        if (moving) setMovingId(moving);
+        reorder.mutate(orderedIds, { onSettled: () => setMovingId(null) });
+    };
+
+    const move = (id: string, dir: -1 | 1) => {
+        if (reorderBusy) return;
+        const arr = siblingIds();
+        const i = arr.indexOf(id);
+        const j = i + dir;
+        if (i === -1 || j < 0 || j >= arr.length) return;
+        const next = [...arr];
+        next.splice(j, 0, ...next.splice(i, 1));
+        fireReorder(next, id);
+    };
+
+    const handleConfirmDelete = () => {
+        if (!deletingRes || isDeleting) return;
+        const target = deletingRes;
+        deleteResource(target.id, {
+            onSuccess: () => setDeletingRes(null),
+        });
+    };
 
     // Form Modal state
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -137,15 +179,29 @@ export function ResourceList({ topicId }: ResourceListProps) {
                     <p>No resources attached yet. Attach up to 3 videos, docs, or blogs.</p>
                 </div>
             ) : (
-                <div className="flex flex-col gap-2.5">
-                    {resources.map((res: Resource) => {
+                <SortableList
+                    ids={resources.map((r) => r.id)}
+                    disabled={reorderBusy}
+                    overlayTitle={(id) => resources.find((r) => r.id === id)?.title ?? 'Resource'}
+                    onReorder={(ids) => fireReorder(ids)}
+                >
+                    <div className="flex flex-col gap-2.5">
+                    {resources.map((res: Resource, index: number) => {
                         const statusConfig = statusStyles[res.status] || statusStyles.TODO;
                         return (
+                            <SortableItem key={res.id} id={res.id} disabled={reorderBusy}>
+                                {({ handleProps, isDragging }) => (
                             <div
-                                key={res.id}
-                                className="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-border gap-3 transition-colors hover:border-border/80"
+                                className={cn(
+                                    'flex items-center justify-between p-3.5 rounded-2xl bg-card border border-border gap-3 flex-wrap transition-colors hover:border-border/80',
+                                    (movingId === res.id || isDragging) && 'opacity-60 motion-safe:animate-pulse',
+                                )}
                             >
                                 <div className="flex items-center gap-3 min-w-0 flex-1">
+                                    <DragHandle
+                                        handleProps={handleProps}
+                                        label={`Drag resource ${res.title} to reorder`}
+                                    />
                                     <div className="w-8 h-8 rounded-xl bg-muted/40 flex items-center justify-center shrink-0">
                                         {typeIcons[res.type] || <Link2 className="w-4 h-4 text-muted-foreground" />}
                                     </div>
@@ -166,7 +222,31 @@ export function ResourceList({ topicId }: ResourceListProps) {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-2 shrink-0">
+                                <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                                    {/* Reorder chevrons */}
+                                    <span className="flex items-center shrink-0" role="group" aria-label={`Reorder ${res.title}`}>
+                                        <button
+                                            type="button"
+                                            onClick={() => move(res.id, -1)}
+                                            disabled={reorderBusy || index === 0}
+                                            title="Move up"
+                                            aria-label={`Move ${res.title} up`}
+                                            className="p-1 rounded-lg text-muted-foreground/60 hover:text-foreground hover:bg-muted/60 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+                                        >
+                                            <ChevronUp className="w-3.5 h-3.5" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => move(res.id, 1)}
+                                            disabled={reorderBusy || index === resources.length - 1}
+                                            title="Move down"
+                                            aria-label={`Move ${res.title} down`}
+                                            className="p-1 rounded-lg text-muted-foreground/60 hover:text-foreground hover:bg-muted/60 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+                                        >
+                                            <ChevronDown className="w-3.5 h-3.5" />
+                                        </button>
+                                    </span>
+
                                     {/* Status selector */}
                                     <select
                                         value={res.status}
@@ -189,7 +269,7 @@ export function ResourceList({ topicId }: ResourceListProps) {
 
                                     {/* Delete */}
                                     <button
-                                        onClick={() => deleteResource(res.id)}
+                                        onClick={() => setDeletingRes(res)}
                                         className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                                         title="Remove resource"
                                     >
@@ -197,10 +277,30 @@ export function ResourceList({ topicId }: ResourceListProps) {
                                     </button>
                                 </div>
                             </div>
+                                )}
+                            </SortableItem>
                         );
                     })}
-                </div>
+                    </div>
+                </SortableList>
             )}
+
+            {/* Delete confirmation */}
+            <ConfirmModal
+                isOpen={deletingRes !== null}
+                title="Remove resource?"
+                description={
+                    deletingRes
+                        ? `Remove "${deletingRes.title}" from this topic? This cannot be undone.`
+                        : ''
+                }
+                confirmLabel="Delete"
+                onConfirm={handleConfirmDelete}
+                onClose={() => {
+                    if (!isDeleting) setDeletingRes(null);
+                }}
+                isPending={isDeleting}
+            />
 
             {/* Modal to attach resource */}
             {isAddModalOpen &&

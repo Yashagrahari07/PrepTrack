@@ -198,7 +198,7 @@ export default function DashboardPage() {
                 <div className="glass-panel rounded-2xl p-5 flex flex-col justify-between gap-3 border border-white/10 hover:border-emerald-500/30 transition-all">
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-semibold text-muted-foreground tracking-wide uppercase">
-                            Domains Configured
+                            Categories Configured
                         </span>
                         <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
                             <Target className="w-4 h-4" />

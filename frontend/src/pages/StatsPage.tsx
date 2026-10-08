@@ -181,7 +181,7 @@ export default function StatsPage() {
                                 <tr className="border-b border-border text-muted-foreground font-semibold">
                                     <th className="pb-3 px-3">#</th>
                                     <th className="pb-3 px-3">Topic Title</th>
-                                    <th className="pb-3 px-3">Category Domain</th>
+                                    <th className="pb-3 px-3">Category</th>
                                     <th className="pb-3 px-3 text-right">Logged Time</th>
                                     <th className="pb-3 px-3 text-right">Action</th>
                                 </tr>

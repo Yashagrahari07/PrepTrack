@@ -106,7 +106,7 @@ export function TopicFormModal({
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     {!parentTopic && (
                         <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="category">Category Domain</Label>
+                            <Label htmlFor="category">Category</Label>
                             <select
                                 id="category"
                                 value={categoryId}

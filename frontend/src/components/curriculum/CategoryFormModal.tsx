@@ -75,7 +75,7 @@ export function CategoryFormModal({ isOpen, onClose }: CategoryFormModalProps) {
                         <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
                             <FolderPlus className="w-5 h-5" />
                         </div>
-                        <h2 className="text-base font-bold text-foreground">Create Curriculum Domain</h2>
+                        <h2 className="text-base font-bold text-foreground">Create Category</h2>
                     </div>
                     <button
                         onClick={onClose}
@@ -89,7 +89,7 @@ export function CategoryFormModal({ isOpen, onClose }: CategoryFormModalProps) {
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     <div className="flex flex-col gap-1.5">
-                        <Label htmlFor="cat-name">Domain / Category Name</Label>
+                        <Label htmlFor="cat-name">Category Name</Label>
                         <Input
                             id="cat-name"
                             placeholder="e.g. Distributed Systems & Cloud"
@@ -130,10 +130,10 @@ export function CategoryFormModal({ isOpen, onClose }: CategoryFormModalProps) {
                         type="submit"
                         size="lg"
                         isLoading={isPending}
-                        loadingText="Creating Domain..."
+                        loadingText="Creating Category..."
                         className="mt-2"
                     >
-                        Create Domain
+                        Create Category
                     </Button>
                 </form>
             </div>

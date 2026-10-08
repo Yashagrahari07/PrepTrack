@@ -1,5 +1,5 @@
 import apiClient from '@/lib/axios';
-import type { Category, Topic, TopicStatus } from '@/lib/types';
+import type { Category, CategoryGroup, ReorderTopicsRequest, Topic, TopicStatus } from '@/lib/types';
 
 // GET /api/categories -> returns { categories: Category[] }
 export async function getCategoriesApi(): Promise<Category[]> {
@@ -34,6 +34,18 @@ export async function getCategoryTopicsApi(categoryId: string): Promise<Topic[]>
 export async function getTopicByIdApi(topicId: string): Promise<Topic> {
     const response = await apiClient.get<{ topic: Topic }>(`/api/topics/${topicId}`);
     return response.data.topic;
+}
+
+// GET /api/topics -> returns { groups: CategoryGroup[] }
+export async function getAllTopicsApi(): Promise<CategoryGroup[]> {
+    const response = await apiClient.get<{ groups?: CategoryGroup[] }>('/api/topics');
+    return response.data.groups || [];
+}
+
+// POST /api/topics/reorder -> returns { topics: Topic[] }
+export async function reorderTopicsApi(data: ReorderTopicsRequest): Promise<Topic[]> {
+    const response = await apiClient.post<{ topics?: Topic[] }>('/api/topics/reorder', data);
+    return response.data.topics || [];
 }
 
 // POST /api/topics -> returns { topic: Topic }

@@ -52,6 +52,25 @@ export interface Topic {
     subtopics?: Topic[];
 }
 
+export interface CategoryGroup {
+    category_id: string;
+    category_name: string;
+    color: string;
+    position: number;
+    topics: Topic[];
+}
+
+export interface ReorderTopicsRequest {
+    category_id: string;
+    parent_id: string | null;
+    ordered_ids: string[];
+}
+
+export interface ReorderResourcesRequest {
+    topic_id: string;
+    ordered_ids: string[];
+}
+
 export interface Resource {
     id: string;
     user_id?: string;
@@ -61,6 +80,7 @@ export interface Resource {
     url: string;
     est_minutes: number;
     status: ResourceStatus;
+    position: number;
     created_at?: string;
 }
 

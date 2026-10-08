@@ -1,18 +1,86 @@
+import { useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { queryKeys } from '@/api/queryKeys';
+import { getErrorMessage } from '@/lib/axios';
 import {
     getCategoriesApi,
     getCategoryTopicsApi,
     getTopicByIdApi,
+    getAllTopicsApi,
     createCategoryApi,
     updateCategoryApi,
     deleteCategoryApi,
     createTopicApi,
     updateTopicApi,
     deleteTopicApi,
+    reorderTopicsApi,
 } from '@/api/curriculum.api';
-import type { TopicStatus } from '@/lib/types';
+import type { CategoryGroup, ReorderTopicsRequest, Topic, TopicStatus } from '@/lib/types';
+
+// Reorder a flat sibling array by id order; unknown ids are dropped.
+function orderByIds<T extends { id: string }>(items: T[], ids: string[]): T[] {
+    const map = new Map(items.map((i) => [i.id, i]));
+    return ids.map((id) => map.get(id)).filter((i): i is T => Boolean(i));
+}
+
+// Apply an id order to a Topic[] sibling set (top-level or one parent's subtopics).
+function applyTopicOrder(topics: Topic[], parentId: string | null, ids: string[]): Topic[] {
+    if (!parentId) return orderByIds(topics, ids);
+    return topics.map((t) =>
+        t.id === parentId && t.subtopics ? { ...t, subtopics: orderByIds(t.subtopics, ids) } : t,
+    );
+}
+
+// Apply an id order to the cached list shape (flat Topic[] or CategoryGroup[]).
+function applyOrderToCache(
+    old: unknown,
+    scope: { categoryId?: string; parentId: string | null },
+    ids: string[],
+): unknown {
+    if (Array.isArray(old) && old.length > 0 && 'topics' in (old[0] as object)) {
+        return (old as CategoryGroup[]).map((g) =>
+            !scope.categoryId || g.category_id === scope.categoryId
+                ? { ...g, topics: applyTopicOrder(g.topics, scope.parentId, ids) }
+                : g,
+        );
+    }
+    if (Array.isArray(old)) {
+        return applyTopicOrder(old as Topic[], scope.parentId, ids);
+    }
+    return old;
+}
+
+// Replace a sibling set with server-returned topic objects (same shapes as above).
+function replaceWithUpdated(
+    old: unknown,
+    scope: { categoryId?: string; parentId: string | null },
+    updated: Topic[],
+): unknown {
+    if (Array.isArray(old) && old.length > 0 && 'topics' in (old[0] as object)) {
+        return (old as CategoryGroup[]).map((g) =>
+            !scope.categoryId || g.category_id === scope.categoryId
+                ? {
+                      ...g,
+                      topics: scope.parentId
+                          ? g.topics.map((t) =>
+                                t.id === scope.parentId ? { ...t, subtopics: updated } : t,
+                            )
+                          : updated,
+                  }
+                : g,
+        );
+    }
+    if (Array.isArray(old) && !scope.parentId) {
+        return updated;
+    }
+    if (Array.isArray(old) && scope.parentId) {
+        return (old as Topic[]).map((t) =>
+            t.id === scope.parentId ? { ...t, subtopics: updated } : t,
+        );
+    }
+    return old;
+}
 
 // Fetch all categories
 export function useCategories() {
@@ -80,7 +148,7 @@ export function useDeleteCategory() {
             qc.invalidateQueries({ queryKey: queryKeys.dashboard.all });
             toast.success('Category deleted');
         },
-        onError: () => toast.error('Failed to delete category'),
+        onError: (err) => toast.error(getErrorMessage(err) || 'Failed to delete category'),
     });
 }
 
@@ -132,6 +200,59 @@ export function useDeleteTopic() {
             qc.invalidateQueries({ queryKey: queryKeys.dashboard.all });
             toast.success('Topic deleted');
         },
-        onError: () => toast.error('Failed to delete topic'),
+        onError: (err) => toast.error(getErrorMessage(err) || 'Failed to delete topic'),
+    });
+}
+
+// Fetch all topics grouped by category (All Domains view)
+export function useAllTopics(enabled = true) {
+    return useQuery({
+        queryKey: queryKeys.categories.tree(),
+        queryFn: getAllTopicsApi,
+        enabled,
+        staleTime: 1000 * 60 * 3,
+    });
+}
+
+export interface ReorderTopicsVars extends ReorderTopicsRequest {
+    // Cache key of the list being reordered (categories.byId(id) or categories.tree()).
+    listKey: readonly unknown[];
+}
+
+// Reorder one sibling set. Lifted to the list level: one instance per sibling
+// set owns the moving state and the single-in-flight guard.
+export function useReorderTopics() {
+    const qc = useQueryClient();
+    const inFlight = useRef(false);
+
+    return useMutation({
+        mutationFn: (vars: ReorderTopicsVars) => {
+            if (inFlight.current) return Promise.reject(new Error('REORDER_IN_FLIGHT'));
+            inFlight.current = true;
+            const { listKey: _listKey, ...body } = vars;
+            return reorderTopicsApi(body).finally(() => {
+                inFlight.current = false;
+            });
+        },
+        onMutate: async (vars) => {
+            await qc.cancelQueries({ queryKey: vars.listKey });
+            const previous = qc.getQueryData(vars.listKey);
+            qc.setQueryData(vars.listKey, (old: unknown) =>
+                applyOrderToCache(old, { categoryId: vars.category_id, parentId: vars.parent_id }, vars.ordered_ids),
+            );
+            return { previous, listKey: vars.listKey };
+        },
+        onError: (err, _vars, context) => {
+            if (err instanceof Error && err.message === 'REORDER_IN_FLIGHT') return;
+            if (context) qc.setQueryData(context.listKey, context.previous);
+            toast.error(getErrorMessage(err) || 'Failed to update order');
+        },
+        onSuccess: (updated, vars) => {
+            qc.setQueryData(vars.listKey, (old: unknown) =>
+                replaceWithUpdated(old, { categoryId: vars.category_id, parentId: vars.parent_id }, updated),
+            );
+            qc.invalidateQueries({ queryKey: vars.listKey });
+            toast.success('Order updated', { id: 'reorder-topics' });
+        },
     });
 }

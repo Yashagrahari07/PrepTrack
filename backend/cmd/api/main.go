@@ -94,16 +94,19 @@ func main() {
 	api.PATCH("/categories/:id", catH.Update)
 	api.DELETE("/categories/:id", catH.Delete)
 
-	// Topics routes
+	// Topics routes (static paths registered before param paths)
+	api.GET("/topics", topicH.ListAll)
 	api.GET("/categories/:id/topics", topicH.ListByCategory)
 	api.GET("/topics/:id", topicH.Get)
 	api.POST("/topics", topicH.Create)
+	api.POST("/topics/reorder", topicH.Reorder)
 	api.PATCH("/topics/:id", topicH.Update)
 	api.DELETE("/topics/:id", topicH.Delete)
 
 	// Resources routes
 	api.GET("/topics/:id/resources", resH.List)
 	api.POST("/topics/:id/resources", resH.Create)
+	api.POST("/resources/reorder", resH.Reorder)
 	api.PATCH("/resources/:id", resH.Update)
 	api.DELETE("/resources/:id", resH.Delete)
 

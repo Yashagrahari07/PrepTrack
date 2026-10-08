@@ -62,6 +62,116 @@ func TestTopic_Validation(t *testing.T) {
 	})
 }
 
+func TestTopicReorder_Validation(t *testing.T) {
+	e := echo.New()
+	topicH := NewTopicHandler(nil)
+
+	newCtx := func(body string) (echo.Context, *httptest.ResponseRecorder) {
+		req := httptest.NewRequest(http.MethodPost, "/api/topics/reorder", strings.NewReader(body))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.Set(middleware.UserIDContextKey, "test-user-123")
+		return c, rec
+	}
+
+	t.Run("Reorder Missing Fields", func(t *testing.T) {
+		c, rec := newCtx(`{"category_id": ""}`)
+		err := topicH.Reorder(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		assert.Contains(t, rec.Body.String(), "MISSING_REQUIRED_FIELDS")
+	})
+
+	t.Run("Reorder Empty List", func(t *testing.T) {
+		c, rec := newCtx(`{"category_id": "11111111-1111-1111-1111-111111111111", "ordered_ids": []}`)
+		err := topicH.Reorder(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		assert.Contains(t, rec.Body.String(), "MISSING_REQUIRED_FIELDS")
+	})
+
+	t.Run("Reorder Duplicate IDs", func(t *testing.T) {
+		id := "11111111-1111-1111-1111-111111111111"
+		c, rec := newCtx(`{"category_id": "` + id + `", "ordered_ids": ["` + id + `", "` + id + `"]}`)
+		err := topicH.Reorder(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		assert.Contains(t, rec.Body.String(), "ORDER_MISMATCH")
+	})
+
+	t.Run("Reorder Invalid UUID", func(t *testing.T) {
+		c, rec := newCtx(`{"category_id": "not-a-uuid", "ordered_ids": ["not-a-uuid"]}`)
+		err := topicH.Reorder(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
+
+	t.Run("Reorder Invalid JSON", func(t *testing.T) {
+		c, rec := newCtx(`{invalid}`)
+		err := topicH.Reorder(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		assert.Contains(t, rec.Body.String(), "INVALID_REQUEST_BODY")
+	})
+}
+
+func TestResourceReorder_Validation(t *testing.T) {
+	e := echo.New()
+	resH := NewResourceHandler(nil)
+
+	newCtx := func(body string) (echo.Context, *httptest.ResponseRecorder) {
+		req := httptest.NewRequest(http.MethodPost, "/api/resources/reorder", strings.NewReader(body))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.Set(middleware.UserIDContextKey, "test-user-123")
+		return c, rec
+	}
+
+	t.Run("Reorder Missing Fields", func(t *testing.T) {
+		c, rec := newCtx(`{"topic_id": ""}`)
+		err := resH.Reorder(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		assert.Contains(t, rec.Body.String(), "MISSING_REQUIRED_FIELDS")
+	})
+
+	t.Run("Reorder Empty List", func(t *testing.T) {
+		c, rec := newCtx(`{"topic_id": "11111111-1111-1111-1111-111111111111", "ordered_ids": []}`)
+		err := resH.Reorder(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		assert.Contains(t, rec.Body.String(), "MISSING_REQUIRED_FIELDS")
+	})
+
+	t.Run("Reorder Duplicate IDs", func(t *testing.T) {
+		id := "11111111-1111-1111-1111-111111111111"
+		c, rec := newCtx(`{"topic_id": "` + id + `", "ordered_ids": ["` + id + `", "` + id + `"]}`)
+		err := resH.Reorder(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		assert.Contains(t, rec.Body.String(), "ORDER_MISMATCH")
+	})
+
+	t.Run("Reorder Over Cap", func(t *testing.T) {
+		id := "11111111-1111-1111-1111-111111111111"
+		c, rec := newCtx(`{"topic_id": "` + id + `", "ordered_ids": ["` + id + `", "` + id + `", "` + id + `", "` + id + `"]}`)
+		err := resH.Reorder(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		assert.Contains(t, rec.Body.String(), "ORDER_MISMATCH")
+	})
+
+	t.Run("Reorder Invalid JSON", func(t *testing.T) {
+		c, rec := newCtx(`{invalid}`)
+		err := resH.Reorder(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		assert.Contains(t, rec.Body.String(), "INVALID_REQUEST_BODY")
+	})
+}
+
 func TestResource_Validation(t *testing.T) {
 	e := echo.New()
 	resH := NewResourceHandler(nil)

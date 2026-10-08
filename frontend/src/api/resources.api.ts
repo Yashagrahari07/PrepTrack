@@ -39,3 +39,9 @@ export async function updateResourceApi(resourceId: string, data: UpdateResource
 export async function deleteResourceApi(resourceId: string): Promise<void> {
     await apiClient.delete(`/api/resources/${resourceId}`);
 }
+
+// POST /api/resources/reorder -> returns { resources: Resource[] }
+export async function reorderResourcesApi(data: { topic_id: string; ordered_ids: string[] }): Promise<Resource[]> {
+    const response = await apiClient.post<{ resources?: Resource[] }>('/api/resources/reorder', data);
+    return response.data.resources || [];
+}

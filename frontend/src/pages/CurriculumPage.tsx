@@ -1,19 +1,27 @@
+import React from 'react';
 import { Search, Plus, BookOpen, Sparkles, FolderPlus, X } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useCategories, useCategoryTopics } from '@/hooks/useCurriculum';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { useCategories, useCategoryTopics, useAllTopics, useDeleteTopic } from '@/hooks/useCurriculum';
 import { useSettings } from '@/hooks/useSettings';
+import { queryKeys } from '@/api/queryKeys';
 import { GOAL_LABELS } from '@/lib/constants';
 import { CategoryTabList } from '@/components/curriculum/CategoryTabList';
-import { TopicTreeCard } from '@/components/curriculum/TopicTreeCard';
+import { CategoryTopicGroup } from '@/components/curriculum/CategoryTopicGroup';
 import { TopicFormModal } from '@/components/curriculum/TopicFormModal';
 import { CategoryFormModal } from '@/components/curriculum/CategoryFormModal';
 import { useAppStore } from '@/stores/app/app.store';
+import type { PendingDelete } from '@/components/curriculum/TopicTreeCard';
+import type { Topic } from '@/lib/types';
 
 export default function CurriculumPage() {
+    const qc = useQueryClient();
     const { data: rawCategories, isLoading: isLoadingCategories } = useCategories();
     const categories = Array.isArray(rawCategories) ? rawCategories : [];
     const { data: settings } = useSettings();
+    const { mutate: deleteTopic, isPending: isDeleting } = useDeleteTopic();
 
     // Dynamic goal label for header copy (null when the user has not set a goal yet)
     const goalLabel =
@@ -41,26 +49,69 @@ export default function CurriculumPage() {
     const openCategoryModal = useAppStore((s) => s.openCategoryModal);
     const closeCategoryModal = useAppStore((s) => s.closeCategoryModal);
 
-    // Default to first category if none selected
-    const activeCategory =
-        categories.find((c) => c.id === selectedCategoryId) || categories[0] || null;
+    // The All tab is an explicit null choice; a fresh null still defaults to
+    // the first category (previous behavior) until the user picks All.
+    const touchedAll = React.useRef(false);
+    React.useEffect(() => {
+        if (categories.length > 0 && selectedCategoryId === null && !touchedAll.current) {
+            setSelectedCategoryId(categories[0].id);
+        }
+    }, [categories, selectedCategoryId, setSelectedCategoryId]);
+
+    const isAll = selectedCategoryId === null;
+    const activeCategory = isAll
+        ? null
+        : categories.find((c) => c.id === selectedCategoryId) || categories[0] || null;
     const activeCategoryId = activeCategory?.id || null;
 
-    const { data: rawTopics, isLoading: isLoadingTopics } = useCategoryTopics(activeCategoryId);
+    const { data: rawTopics, isLoading: isLoadingTopics } = useCategoryTopics(isAll ? null : activeCategoryId);
     const topics = Array.isArray(rawTopics) ? rawTopics : [];
 
+    const { data: rawGroups, isLoading: isLoadingGroups } = useAllTopics(isAll && categories.length > 0);
+    const groups = Array.isArray(rawGroups) ? rawGroups : [];
+
+    // ── Lifted delete confirmation (one modal for all topic/subtopic rows) ──
+    const [pendingDelete, setPendingDelete] = React.useState<PendingDelete | null>(null);
+
+    const handleRequestDelete = (kind: 'topic' | 'subtopic', id: string, title: string) => {
+        setPendingDelete({ kind, id, title });
+    };
+
+    const handleConfirmDelete = () => {
+        if (!pendingDelete || isDeleting) return;
+        const target = pendingDelete;
+        deleteTopic(target.id, {
+            onSuccess: () => {
+                setPendingDelete(null);
+                qc.invalidateQueries({ queryKey: queryKeys.categories.tree() });
+                if (activeCategoryId) {
+                    qc.invalidateQueries({ queryKey: queryKeys.categories.byId(activeCategoryId) });
+                }
+            },
+        });
+    };
+
+    const deleteDescription =
+        pendingDelete?.kind === 'subtopic'
+            ? `Delete subtopic "${pendingDelete?.title}"? This cannot be undone.`
+            : `Delete topic "${pendingDelete?.title}"? Its subtopics, resources, and study logs will also be removed. This cannot be undone.`;
+
     // Filter topics by title
-    const filteredTopics = topics.filter((t) =>
-        t.title.toLowerCase().includes(curriculumSearch.toLowerCase()),
-    );
+    const q = curriculumSearch.toLowerCase();
+    const filteredTopics = topics.filter((t) => t.title.toLowerCase().includes(q));
+    const filteredGroups = groups
+        .map((g) => ({ ...g, topics: g.topics.filter((t) => t.title.toLowerCase().includes(q)) }))
+        .filter((g) => g.topics.length > 0 || q === '');
 
     const handleOpenCreateTopic = () => {
         openTopicModal({ categoryId: activeCategoryId ?? undefined });
     };
 
-    const handleOpenAddSubtopic = (parent: import('@/lib/types').Topic) => {
+    const handleOpenAddSubtopic = (parent: Topic) => {
         openTopicModal({ parentTopic: parent });
     };
+
+    const listKey = isAll ? queryKeys.categories.tree() : queryKeys.categories.byId(activeCategoryId ?? '');
 
     return (
         <div className="flex flex-col gap-6 animate-fade-in">
@@ -92,14 +143,19 @@ export default function CurriculumPage() {
                         <span>Add Category</span>
                     </Button>
 
-                    <Button onClick={handleOpenCreateTopic} className="gap-2 shadow-lg shadow-primary/20">
+                    <Button
+                        onClick={handleOpenCreateTopic}
+                        disabled={isAll}
+                        title={isAll ? 'Select a category to add topics' : undefined}
+                        className="gap-2 shadow-lg shadow-primary/20"
+                    >
                         <Plus className="w-4 h-4" />
                         <span>Add Topic</span>
                     </Button>
                 </div>
             </div>
 
-            {/* Domain Tabs Bar */}
+            {/* Category Tabs Bar */}
             {isLoadingCategories ? (
                 <div className="flex gap-2">
                     {[1, 2, 3, 4].map((i) => (
@@ -110,7 +166,10 @@ export default function CurriculumPage() {
                 <CategoryTabList
                     categories={categories}
                     selectedCategoryId={selectedCategoryId}
-                    onSelectCategory={(id) => setSelectedCategoryId(id)}
+                    onSelectCategory={(id) => {
+                        if (id === null) touchedAll.current = true;
+                        setSelectedCategoryId(id);
+                    }}
                     onAddCategory={openCategoryModal}
                 />
             )}
@@ -120,7 +179,7 @@ export default function CurriculumPage() {
                 <div className="relative flex-1 min-w-[240px] max-w-md">
                     <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                        placeholder="Search topics in this category..."
+                        placeholder={isAll ? 'Search topics across all categories...' : 'Search topics in this category...'}
                         value={curriculumSearch}
                         onChange={(e) => setCurriculumSearch(e.target.value)}
                         className="pl-10 pr-9 h-10 text-xs sm:text-sm bg-card/60"
@@ -138,12 +197,75 @@ export default function CurriculumPage() {
                 </div>
 
                 <div className="text-xs text-muted-foreground font-medium">
-                    Showing <span className="text-foreground font-bold">{filteredTopics.length}</span> topics
+                    {isAll ? (
+                        <>
+                            Showing <span className="text-foreground font-bold">{filteredGroups.reduce((n, g) => n + g.topics.length, 0)}</span> topics
+                            in <span className="text-foreground font-bold">{filteredGroups.length}</span> categories
+                        </>
+                    ) : (
+                        <>
+                            Showing <span className="text-foreground font-bold">{filteredTopics.length}</span> topics
+                        </>
+                    )}
                 </div>
             </div>
 
             {/* Topic List */}
-            {isLoadingTopics ? (
+            {isAll ? (
+                isLoadingGroups ? (
+                    <div className="flex flex-col gap-6">
+                        {[1, 2].map((i) => (
+                            <div key={i} className="flex flex-col gap-3">
+                                <div className="h-5 w-40 rounded-lg bg-muted/40 animate-pulse" />
+                                <div className="h-24 rounded-2xl bg-card border border-border animate-pulse" />
+                            </div>
+                        ))}
+                    </div>
+                ) : filteredGroups.length === 0 ? (
+                    <div className="glass-panel rounded-3xl p-12 text-center flex flex-col items-center justify-center gap-3 border border-border">
+                        <div className="w-12 h-12 rounded-2xl bg-muted/40 flex items-center justify-center text-muted-foreground">
+                            <BookOpen className="w-6 h-6" />
+                        </div>
+                        <h3 className="font-semibold text-foreground text-base">No topics found</h3>
+                        <p className="text-xs text-muted-foreground max-w-sm">
+                            {curriculumSearch
+                                ? `No topics match "${curriculumSearch}" in any category.`
+                                : 'No categories have topics yet. Select a category and click "Add Topic" to begin.'}
+                        </p>
+                    </div>
+                ) : (
+                    <div className="flex flex-col gap-8">
+                        {filteredGroups.map((g) => (
+                            <section key={g.category_id} aria-label={g.category_name}>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <span
+                                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                                        style={{ backgroundColor: g.color }}
+                                    />
+                                    <h2 className="text-sm font-bold text-foreground">{g.category_name}</h2>
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                                        {g.topics.length}
+                                    </span>
+                                </div>
+                                {g.topics.length === 0 ? (
+                                    <p className="text-xs text-muted-foreground italic pl-5">
+                                        No topics in this category yet.
+                                    </p>
+                                ) : (
+                                    <CategoryTopicGroup
+                                        listKey={listKey}
+                                        categoryId={g.category_id}
+                                        color={g.color}
+                                        topics={g.topics}
+                                        onRequestDelete={handleRequestDelete}
+                                        onAddSubtopic={handleOpenAddSubtopic}
+                                    />
+                                )}
+                            </section>
+                        ))}
+                    </div>
+                )
+            ) : isLoadingTopics ? (
                 <div className="flex flex-col gap-3">
                     {[1, 2, 3].map((i) => (
                         <div key={i} className="h-24 rounded-2xl bg-card border border-border animate-pulse" />
@@ -158,7 +280,7 @@ export default function CurriculumPage() {
                     <p className="text-xs text-muted-foreground max-w-sm">
                         {curriculumSearch
                             ? `No topics match "${curriculumSearch}" in this category.`
-                            : 'This domain has no topics yet. Click "Add Topic" to build your curriculum.'}
+                            : 'This category has no topics yet. Click "Add Topic" to build your curriculum.'}
                     </p>
                     <Button size="sm" onClick={handleOpenCreateTopic} className="mt-2 gap-1.5">
                         <Plus className="w-4 h-4" />
@@ -166,17 +288,27 @@ export default function CurriculumPage() {
                     </Button>
                 </div>
             ) : (
-                <div className="flex flex-col gap-3">
-                    {filteredTopics.map((topic) => (
-                        <TopicTreeCard
-                            key={topic.id}
-                            topic={topic}
-                            categoryColor={activeCategory?.color || '#6366f1'}
-                            onAddSubtopic={handleOpenAddSubtopic}
-                        />
-                    ))}
-                </div>
+                <CategoryTopicGroup
+                    listKey={listKey}
+                    categoryId={activeCategoryId ?? ''}
+                    color={activeCategory?.color}
+                    topics={filteredTopics}
+                    onRequestDelete={handleRequestDelete}
+                    onAddSubtopic={handleOpenAddSubtopic}
+                />
             )}
+
+            {/* Delete confirmation */}
+            <ConfirmModal
+                isOpen={pendingDelete !== null}
+                title={pendingDelete?.kind === 'subtopic' ? 'Delete subtopic?' : 'Delete topic?'}
+                description={deleteDescription}
+                onConfirm={handleConfirmDelete}
+                onClose={() => {
+                    if (!isDeleting) setPendingDelete(null);
+                }}
+                isPending={isDeleting}
+            />
 
             {/* Create Topic / Subtopic Modal */}
             <TopicFormModal
@@ -187,7 +319,7 @@ export default function CurriculumPage() {
                 parentTopic={topicModalParent}
             />
 
-            {/* Create Category / Domain Modal */}
+            {/* Create Category Modal */}
             <CategoryFormModal
                 isOpen={isCategoryModalOpen}
                 onClose={closeCategoryModal}

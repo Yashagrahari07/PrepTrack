@@ -34,10 +34,10 @@ func (h *ResourceHandler) List(c echo.Context) error {
 
 	ctx := c.Request().Context()
 	rows, err := h.pool.Query(ctx,
-		`SELECT id, user_id, topic_id, type, title, url, est_minutes, status, created_at
+		`SELECT id, user_id, topic_id, type, title, url, est_minutes, status, position, created_at
 		 FROM resources
 		 WHERE topic_id = $1 AND user_id = $2
-		 ORDER BY created_at ASC`,
+		 ORDER BY position ASC, created_at ASC`,
 		topicID, userID,
 	)
 	if err != nil {
@@ -48,7 +48,7 @@ func (h *ResourceHandler) List(c echo.Context) error {
 	resources := []model.Resource{}
 	for rows.Next() {
 		var res model.Resource
-		if err := rows.Scan(&res.ID, &res.UserID, &res.TopicID, &res.Type, &res.Title, &res.URL, &res.EstMinutes, &res.Status, &res.CreatedAt); err != nil {
+		if err := rows.Scan(&res.ID, &res.UserID, &res.TopicID, &res.Type, &res.Title, &res.URL, &res.EstMinutes, &res.Status, &res.Position, &res.CreatedAt); err != nil {
 			return sendError(c, http.StatusInternalServerError, "DATABASE_ERROR", "Failed to scan resource row")
 		}
 		resources = append(resources, res)
@@ -119,12 +119,15 @@ func (h *ResourceHandler) Create(c echo.Context) error {
 		return sendError(c, http.StatusBadRequest, "INVALID_TOPIC", "Target topic does not exist or is unauthorized")
 	}
 
-	// MAX-3 GUARD: Enforce maximum of 3 resources per topic
-	var count int
+	// MAX-3 GUARD: Enforce maximum of 3 resources per topic.
+	// Single read also yields the append position (duplicate positions from
+	// concurrent creates are benign under ORDER BY position, created_at and
+	// self-heal on the next reorder).
+	var count, maxPos int
 	err = h.pool.QueryRow(ctx,
-		"SELECT COUNT(*) FROM resources WHERE topic_id = $1 AND user_id = $2",
+		"SELECT COUNT(*), COALESCE(MAX(position), -1) FROM resources WHERE topic_id = $1 AND user_id = $2",
 		topicID, userID,
-	).Scan(&count)
+	).Scan(&count, &maxPos)
 	if err != nil {
 		return sendError(c, http.StatusInternalServerError, "DATABASE_ERROR", "Failed to check resource limit")
 	}
@@ -135,11 +138,11 @@ func (h *ResourceHandler) Create(c echo.Context) error {
 
 	var res model.Resource
 	err = h.pool.QueryRow(ctx,
-		`INSERT INTO resources (user_id, topic_id, type, title, url, est_minutes, status)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7)
-		 RETURNING id, user_id, topic_id, type, title, url, est_minutes, status, created_at`,
-		userID, topicID, req.Type, req.Title, req.URL, req.EstMinutes, req.Status,
-	).Scan(&res.ID, &res.UserID, &res.TopicID, &res.Type, &res.Title, &res.URL, &res.EstMinutes, &res.Status, &res.CreatedAt)
+		`INSERT INTO resources (user_id, topic_id, type, title, url, est_minutes, status, position)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		 RETURNING id, user_id, topic_id, type, title, url, est_minutes, status, position, created_at`,
+		userID, topicID, req.Type, req.Title, req.URL, req.EstMinutes, req.Status, maxPos+1,
+	).Scan(&res.ID, &res.UserID, &res.TopicID, &res.Type, &res.Title, &res.URL, &res.EstMinutes, &res.Status, &res.Position, &res.CreatedAt)
 
 	if err != nil {
 		return sendError(c, http.StatusInternalServerError, "DATABASE_ERROR", "Failed to create resource")
@@ -216,9 +219,9 @@ func (h *ResourceHandler) Update(c echo.Context) error {
 		     est_minutes = COALESCE($4, est_minutes),
 		     status = COALESCE($5, status)
 		 WHERE id = $6 AND user_id = $7
-		 RETURNING id, user_id, topic_id, type, title, url, est_minutes, status, created_at`,
+		 RETURNING id, user_id, topic_id, type, title, url, est_minutes, status, position, created_at`,
 		req.Type, req.Title, req.URL, req.EstMinutes, req.Status, resourceID, userID,
-	).Scan(&res.ID, &res.UserID, &res.TopicID, &res.Type, &res.Title, &res.URL, &res.EstMinutes, &res.Status, &res.CreatedAt)
+	).Scan(&res.ID, &res.UserID, &res.TopicID, &res.Type, &res.Title, &res.URL, &res.EstMinutes, &res.Status, &res.Position, &res.CreatedAt)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -259,5 +262,133 @@ func (h *ResourceHandler) Delete(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"message": "Resource deleted successfully",
+	})
+}
+
+type ReorderResourcesRequest struct {
+	TopicID    string   `json:"topic_id"`
+	OrderedIDs []string `json:"ordered_ids"`
+}
+
+// Reorder rewrites positions 0..n-1 for one topic's resources in a single transaction.
+// Gaps left by deletes are harmless and normalize on the next reorder.
+func (h *ResourceHandler) Reorder(c echo.Context) error {
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		return sendError(c, http.StatusUnauthorized, "UNAUTHORIZED", "Missing user identity in context")
+	}
+
+	var req ReorderResourcesRequest
+	if err := c.Bind(&req); err != nil {
+		return sendError(c, http.StatusBadRequest, "INVALID_REQUEST_BODY", "Invalid JSON payload")
+	}
+
+	if req.TopicID == "" || req.OrderedIDs == nil {
+		return sendError(c, http.StatusBadRequest, "MISSING_REQUIRED_FIELDS", "Topic ID and ordered ID list are required")
+	}
+	if len(req.OrderedIDs) == 0 {
+		return sendError(c, http.StatusBadRequest, "MISSING_REQUIRED_FIELDS", "Ordered ID list cannot be empty")
+	}
+	if len(req.OrderedIDs) > 3 {
+		return sendError(c, http.StatusBadRequest, "ORDER_MISMATCH", "A topic cannot have more than 3 resources")
+	}
+	if !isValidUUID(req.TopicID) {
+		return sendError(c, http.StatusBadRequest, "INVALID_REQUEST_BODY", "Topic ID is not a valid UUID")
+	}
+	for _, id := range req.OrderedIDs {
+		if !isValidUUID(id) {
+			return sendError(c, http.StatusBadRequest, "INVALID_REQUEST_BODY", "Ordered ID list contains an invalid UUID")
+		}
+	}
+	seen := make(map[string]bool, len(req.OrderedIDs))
+	for _, id := range req.OrderedIDs {
+		if seen[id] {
+			return sendError(c, http.StatusBadRequest, "ORDER_MISMATCH", "Ordered ID list contains duplicates")
+		}
+		seen[id] = true
+	}
+
+	ctx := c.Request().Context()
+	tx, err := h.pool.Begin(ctx)
+	if err != nil {
+		return sendError(c, http.StatusInternalServerError, "DATABASE_ERROR", "Database connection error")
+	}
+	defer tx.Rollback(ctx)
+
+	var topicExists bool
+	err = tx.QueryRow(ctx,
+		"SELECT EXISTS(SELECT 1 FROM topics WHERE id = $1 AND user_id = $2)",
+		req.TopicID, userID,
+	).Scan(&topicExists)
+	if err != nil || !topicExists {
+		return sendError(c, http.StatusNotFound, "TOPIC_NOT_FOUND", "Target topic does not exist or is unauthorized")
+	}
+
+	rows, err := tx.Query(ctx,
+		"SELECT id FROM resources WHERE user_id = $1 AND topic_id = $2 FOR UPDATE",
+		userID, req.TopicID,
+	)
+	if err != nil {
+		return sendError(c, http.StatusInternalServerError, "DATABASE_ERROR", "Failed to lock resource order")
+	}
+	existing := make(map[string]bool)
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return sendError(c, http.StatusInternalServerError, "DATABASE_ERROR", "Failed to scan resource row")
+		}
+		existing[id] = true
+	}
+	rows.Close()
+	if rows.Err() != nil {
+		return sendError(c, http.StatusInternalServerError, "DATABASE_ERROR", "Failed to read resource order")
+	}
+
+	if len(existing) != len(req.OrderedIDs) {
+		return sendError(c, http.StatusBadRequest, "ORDER_MISMATCH", "Ordered ID list does not match the existing resources")
+	}
+	for _, id := range req.OrderedIDs {
+		if !existing[id] {
+			return sendError(c, http.StatusBadRequest, "ORDER_MISMATCH", "Ordered ID list does not match the existing resources")
+		}
+	}
+
+	_, err = tx.Exec(ctx,
+		`UPDATE resources AS r SET position = u.ord
+		 FROM unnest($1::uuid[], $2::int[]) WITH ORDINALITY AS u(id, ord)
+		 WHERE r.id = u.id AND r.user_id = $3`,
+		req.OrderedIDs, makeRange(len(req.OrderedIDs)), userID,
+	)
+	if err != nil {
+		return sendError(c, http.StatusInternalServerError, "DATABASE_ERROR", "Failed to persist resource order")
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return sendError(c, http.StatusInternalServerError, "DATABASE_ERROR", "Failed to commit resource order")
+	}
+
+	outRows, err := h.pool.Query(ctx,
+		`SELECT id, user_id, topic_id, type, title, url, est_minutes, status, position, created_at
+		 FROM resources WHERE user_id = $1 AND topic_id = $2
+		 ORDER BY position ASC, created_at ASC`,
+		userID, req.TopicID,
+	)
+	if err != nil {
+		return sendError(c, http.StatusInternalServerError, "DATABASE_ERROR", "Failed to fetch updated order")
+	}
+	defer outRows.Close()
+
+	updated := []model.Resource{}
+	for outRows.Next() {
+		var r model.Resource
+		if err := outRows.Scan(&r.ID, &r.UserID, &r.TopicID, &r.Type, &r.Title, &r.URL, &r.EstMinutes, &r.Status, &r.Position, &r.CreatedAt); err != nil {
+			return sendError(c, http.StatusInternalServerError, "DATABASE_ERROR", "Failed to scan resource row")
+		}
+		updated = append(updated, r)
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"resources": updated,
 	})
 }
