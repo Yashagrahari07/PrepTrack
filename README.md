@@ -37,7 +37,9 @@ documentation. It links and organizes them.
 |------|--------------|
 | Auth | Signup plus login and logout over HttpOnly cookies (JWT), with rate-limited auth endpoints |
 | Study-plan CRUD | Categories, topics, and subtopics for any syllabus, strictly scoped per user (`user_id` comes from the verified JWT, never from request input) |
-| Resources | Up to 3 curated links per topic (video, playlist, blog, docs) with status and duration |
+| Ordering | Drag-and-drop (mouse, touch, keyboard) plus move up and down controls for tasks, subtasks, and resources, with a grouped All Categories view. Order persists per user |
+| Editing | Inline title, category, and resource edits. Tasks move across categories with children following; moved subtopics land top-level |
+| Resources | Up to 3 curated links per topic (video, playlist, blog, docs) with status and duration. YouTube links prefill titles on paste; durations entered as hours and minutes |
 | Study logs | Log minutes per topic with optional comment and date |
 | Dashboard | Goal-aware welcome, streak tracking (30 min per day, 1 grace day), weekly hours vs target, revisions-due count, focus topic, per-category progress, 84-day heatmap |
 | Spaced revisions | Marking a topic `LEARNED` schedules day 1; completing a revision with confidence 1 to 5 schedules the next interval (1, 3, 7, or 21 days); two consecutive 5s promote to mastery |
@@ -51,7 +53,7 @@ documentation. It links and organizes them.
 
 | Layer    | Technology                                                                                                        |
 |----------|-------------------------------------------------------------------------------------------------------------------|
-| Frontend | React 19, Vite, TypeScript, React Router, TanStack Query, Zustand, Axios, Recharts, Tailwind CSS v4              |
+| Frontend | React 19, Vite, TypeScript, React Router, TanStack Query, Zustand, Axios, Recharts, DnD Kit, Tailwind CSS v4     |
 | Backend  | Go, Echo, `pgx` pool, `bcrypt`, JWT (`golang-jwt`), raw-SQL migrations                                            |
 | Database | PostgreSQL (NeonDB serverless)                                                                                    |
 | Hosting  | Vercel (frontend), Render (backend), NeonDB (database)                                                            |
@@ -71,7 +73,7 @@ PrepTrack/
 │   │   ├── handler/    # Auth, categories, topics, resources, logs, dashboard, revisions, stats, settings
 │   │   ├── middleware/ # JWT, CORS, rate limiting
 │   │   └── model/      # Request and response shapes
-│   ├── migrations/     # 001_init.sql, 002_user_settings_extensions.sql (UP/DOWN)
+│   ├── migrations/     # 001_init.sql through 004_resource_minutes_float.sql (UP/DOWN)
 │   └── .env.example
 ├── frontend/
 │   ├── public/         # icon.svg favicon
@@ -102,7 +104,8 @@ go mod download
 go build ./...
 
 # 3. Create the schema (run from backend/, requires DATABASE_URL)
-go run ./cmd/migrate
+go run ./cmd/migrate up
+# Roll back the last file: go run ./cmd/migrate down
 
 # 4. Start the API: http://localhost:8080 (health check: GET /health)
 go run ./cmd/api
@@ -169,8 +172,11 @@ signup, login, logout, and health require authentication.
 | `GET /api/settings`, `PATCH /api/settings`                                                                       | Weekly target, goal (`goal_type`, `goal_custom_text`), reference sheet URL and visibility |
 | `GET /api/dashboard`, `GET /api/stats`                                                                           | Aggregated metrics and extended analytics            |
 | `GET /api/categories`, `POST /api/categories`, `PATCH /api/categories/:id`, `DELETE /api/categories/:id`        | Category CRUD                                        |
-| `GET /api/categories/:id/topics`, `GET /api/topics/:id`, `POST /api/topics`, `PATCH /api/topics/:id`, `DELETE /api/topics/:id` | Topic CRUD (`LEARNED` status triggers a revision) |
-| `GET /api/topics/:id/resources`, `POST /api/topics/:id/resources`, `PATCH /api/resources/:id`, `DELETE /api/resources/:id` | Resources (maximum 3 per topic)               |
+| `GET /api/categories/:id/topics`, `GET /api/topics`, `GET /api/topics/:id`, `POST /api/topics`, `PATCH /api/topics/:id`, `DELETE /api/topics/:id` | Topic CRUD (`LEARNED` status triggers a revision; `PATCH` accepts `category_id` to move, children follow) |
+| `POST /api/topics/reorder`                                                                                          | Reorder tasks or subtasks within their group         |
+| `GET /api/topics/:id/resources`, `POST /api/topics/:id/resources`, `PATCH /api/resources/:id`, `DELETE /api/resources/:id` | Resources (maximum 3 per topic), float durations     |
+| `POST /api/resources/reorder`                                                                                     | Reorder a topic's resources                          |
+| `GET /api/metadata/youtube?url=`                                                                                  | YouTube title prefill, videos and playlists (nothing persisted) |
 | `GET /api/topics/:id/logs`, `POST /api/study-logs`                                                               | Study logs (`{topic_id, minutes, comment?, logged_on?}`) |
 | `GET /api/revisions/due`, `POST /api/revisions/:id/complete`                                                     | Due queue, complete with `{confidence: 1-5}`         |
 
