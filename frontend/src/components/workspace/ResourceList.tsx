@@ -308,10 +308,11 @@ export function ResourceList({ topicId }: ResourceListProps) {
                             <div
                                 className={cn(
                                     'flex items-center justify-between p-3.5 rounded-2xl bg-card border border-border gap-3 flex-wrap transition-colors hover:border-border/80',
+                                    'max-sm:flex-col max-sm:items-stretch',
                                     (movingId === res.id || isDragging) && 'opacity-60 motion-safe:animate-pulse',
                                 )}
                             >
-                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <div className="flex items-center gap-3 min-w-0 flex-1 max-sm:w-full">
                                     <DragHandle
                                         handleProps={handleProps}
                                         label={`Drag resource ${res.title} to reorder`}
@@ -320,7 +321,7 @@ export function ResourceList({ topicId }: ResourceListProps) {
                                         {typeIcons[res.type] || <Link2 className="w-4 h-4 text-muted-foreground" />}
                                     </div>
 
-                                    <div className="flex flex-col min-w-0">
+                                    <div className="flex flex-col min-w-0 flex-1">
                                         <a
                                             href={res.url}
                                             target="_blank"
@@ -336,7 +337,7 @@ export function ResourceList({ topicId }: ResourceListProps) {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                                <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end max-sm:w-full">
                                     {/* Reorder chevrons */}
                                     <span className="flex items-center shrink-0" role="group" aria-label={`Reorder ${res.title}`}>
                                         <button
@@ -435,7 +436,7 @@ export function ResourceList({ topicId }: ResourceListProps) {
                         onClick={() => closeModal()}
                     >
                         <div
-                            className="relative w-full max-w-md bg-card border border-border shadow-2xl rounded-3xl p-6 animate-fade-up"
+                            className="relative w-full max-w-md max-h-[90dvh] overflow-y-auto overscroll-contain bg-card border border-border shadow-2xl rounded-3xl p-6 animate-fade-up"
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="flex items-center justify-between mb-4">

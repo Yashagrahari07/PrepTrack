@@ -48,8 +48,8 @@ function FeatureCard({ icon, title, description, accentColor, delay = '0ms' }: F
 function StatItem({ value, label }: { value: string; label: string }) {
     return (
         <div className="flex flex-col items-center gap-1">
-            <span className="text-4xl font-bold text-foreground tracking-tight">{value}</span>
-            <span className="text-muted-foreground text-sm">{label}</span>
+            <span className="text-4xl max-sm:text-3xl font-bold text-foreground tracking-tight">{value}</span>
+            <span className="text-muted-foreground text-sm leading-tight text-center">{label}</span>
         </div>
     );
 }
@@ -69,14 +69,14 @@ export default function LandingPage() {
             <div className="pointer-events-none fixed inset-0 bg-dot-pattern fade-mask-radial opacity-40" aria-hidden="true" />
 
             {/* ── Nav ─────────────────────────────────────────── */}
-            <nav className="relative z-10 flex items-center justify-between px-6 py-5 max-w-6xl mx-auto">
-                <div className="flex items-center gap-2">
+            <nav className="relative z-10 flex items-center justify-between px-6 max-sm:px-4 py-5 max-w-6xl mx-auto">
+                <div className="flex items-center gap-2 shrink-0">
                     <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
                         <Target className="w-4 h-4 text-primary-foreground" />
                     </div>
                     <span className="font-bold text-foreground text-xl tracking-tight">PrepTrack</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 max-sm:gap-1">
                     <button
                         onClick={toggleTheme}
                         className="p-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
@@ -86,13 +86,13 @@ export default function LandingPage() {
                     </button>
                     <Link
                         to="/login"
-                        className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium px-4 py-2"
+                        className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium px-4 max-sm:px-2 py-2 whitespace-nowrap"
                     >
                         Sign in
                     </Link>
                     <Link
                         to="/signup"
-                        className="bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium px-5 py-2.5 rounded-xl transition-all duration-200 shadow-lg shadow-primary/25 hover:shadow-primary/40"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium px-5 max-sm:px-3 py-2.5 rounded-xl transition-all duration-200 shadow-lg shadow-primary/25 hover:shadow-primary/40 whitespace-nowrap"
                     >
                         Get Started
                     </Link>
@@ -100,7 +100,7 @@ export default function LandingPage() {
             </nav>
 
             {/* ── Hero ────────────────────────────────────────── */}
-            <section className="relative z-10 max-w-6xl mx-auto px-6 pt-20 pb-24 flex flex-col items-center text-center">
+            <section className="relative z-10 max-w-6xl mx-auto px-6 max-sm:px-4 pt-20 max-sm:pt-12 pb-24 max-sm:pb-16 flex flex-col items-center text-center">
 {/* Badge */}
                 <div className="animate-fade-up" style={{ opacity: 0, animationFillMode: 'forwards' }}>
                     <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-panel text-xs font-medium text-accent-foreground mb-8">
@@ -111,7 +111,7 @@ export default function LandingPage() {
 
                 {/* Headline */}
                 <h1
-                    className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-foreground leading-[1.1] tracking-tight max-w-4xl animate-fade-up animation-delay-100"
+                    className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-foreground leading-[1.1] tracking-tight max-w-4xl animate-fade-up animation-delay-100"
                     style={{ opacity: 0, animationFillMode: 'forwards' }}
                 >
                     Turn scattered prep into{' '}
@@ -165,7 +165,7 @@ export default function LandingPage() {
                 >
                     <div className="glass-panel rounded-3xl p-6 border border-white/10 shadow-2xl shadow-primary/10">
                         {/* Fake dashboard header */}
-                        <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center justify-between gap-2 flex-wrap mb-6">
                             <div className="flex items-center gap-3">
                                 <div className="flex gap-1.5">
                                     <div className="w-3 h-3 rounded-full bg-destructive/70" />
@@ -179,7 +179,7 @@ export default function LandingPage() {
                                     <Flame className="w-3.5 h-3.5 animate-pulse-flame text-status-in-progress" />
                                     <span className="text-foreground font-semibold">14 Days</span>
                                 </div>
-                                <div className="w-24 h-7 rounded-lg bg-primary/20 animate-pulse" />
+                                <div className="w-24 h-7 rounded-lg bg-primary/20 animate-pulse max-sm:hidden" />
                             </div>
                         </div>
                         {/* Fake stat cards */}
@@ -220,7 +220,7 @@ export default function LandingPage() {
             {/* Stats Row ───────────────────────────────────── */}
             <section className="relative z-10 max-w-6xl mx-auto px-6 py-16">
                 <div className="glass-panel rounded-3xl px-8 py-10">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 divide-y sm:divide-y-0 sm:divide-x divide-border">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 max-sm:gap-6 sm:divide-y-0 sm:divide-x divide-border">
                         <StatItem value="∞" label="Categories" />
                         <StatItem value="∞" label="Topics" />
                         <StatItem value="D+21" label="Spaced Revision Cycle" />
@@ -287,8 +287,8 @@ export default function LandingPage() {
             </section>
 
             {/* ── CTA Bottom ──────────────────────────────────── */}
-            <section className="relative z-10 max-w-6xl mx-auto px-6 py-24">
-                <div className="glass-panel rounded-[2rem] px-8 py-16 sm:py-20 text-center relative overflow-hidden border-white/10 shadow-2xl shadow-primary/10">
+            <section className="relative z-10 max-w-6xl mx-auto px-6 max-sm:px-4 py-24 max-sm:py-16">
+                <div className="glass-panel rounded-[2rem] px-8 max-sm:px-5 py-16 max-sm:py-10 sm:py-20 text-center relative overflow-hidden border-white/10 shadow-2xl shadow-primary/10">
                     <div className="absolute inset-0 ambient-glow-indigo pointer-events-none" />
                     <div className="absolute inset-0 ambient-glow-emerald opacity-60 pointer-events-none" />
                     <div className="absolute inset-0 bg-dot-pattern fade-mask-radial opacity-30 pointer-events-none" />
@@ -309,14 +309,14 @@ export default function LandingPage() {
                     <div className="relative flex flex-col sm:flex-row items-center justify-center gap-3">
                         <Link
                             to="/signup"
-                            className="group inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-10 py-4 rounded-2xl transition-all duration-200 shadow-xl shadow-primary/30 hover:shadow-primary/50"
+                            className="group inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-10 py-4 rounded-2xl transition-all duration-200 shadow-xl shadow-primary/30 hover:shadow-primary/50 max-sm:w-full"
                         >
                             Create Your Account
                             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                         </Link>
                         <Link
                             to="/login"
-                            className="inline-flex items-center gap-2 glass-panel text-foreground font-medium px-10 py-4 rounded-2xl hover:border-white/20 transition-all duration-200"
+                            className="inline-flex items-center justify-center gap-2 glass-panel text-foreground font-medium px-10 py-4 rounded-2xl hover:border-white/20 transition-all duration-200 max-sm:w-full"
                         >
                             Sign in
                         </Link>
@@ -340,8 +340,8 @@ export default function LandingPage() {
 
             {/* ── Footer ──────────────────────────────────────── */}
             <footer className="relative z-10 border-t border-border/60">
-                <div className="max-w-6xl mx-auto px-6 py-12 grid gap-10 sm:grid-cols-[1.4fr_1fr_1fr]">
-                    <div>
+                <div className="max-w-6xl mx-auto px-6 max-sm:px-4 py-12 max-sm:py-8 grid gap-10 max-sm:gap-8 max-sm:grid-cols-2 sm:grid-cols-[1.4fr_1fr_1fr]">
+                    <div className="max-sm:col-span-2">
                         <div className="flex items-center gap-2.5 mb-3">
                             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
                                 <Target className="w-4 h-4 text-primary-foreground" />

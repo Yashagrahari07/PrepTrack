@@ -193,6 +193,9 @@ export default function GuidePage() {
     const scrollTo = (id: string) => {
         setActiveId(id);
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document
+            .getElementById(`guide-pill-${id}`)
+            ?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     };
 
     // Scroll-spy: highlight the section currently in view in both navs.
@@ -268,10 +271,11 @@ export default function GuidePage() {
             </div>
 
             {/* ── Mobile section nav ──────────────────────────────── */}
-            <div className="flex gap-2 overflow-x-auto pb-1 lg:hidden">
+            <div className="flex gap-2 overflow-x-auto scrollbar-none snap-x pb-1 lg:hidden">
                 {GUIDE_SECTIONS.map((s, i) => (
                     <button
                         key={s.id}
+                        id={`guide-pill-${s.id}`}
                         onClick={() => scrollTo(s.id)}
                         className={cn(
                             'shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold transition-all',

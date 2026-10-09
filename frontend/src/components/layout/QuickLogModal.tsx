@@ -81,7 +81,7 @@ export function QuickLogModal() {
             onClick={handleBackdropClick}
         >
             <div
-                className="relative w-full max-w-lg bg-card border border-border rounded-3xl p-6 sm:p-8 shadow-2xl animate-fade-up"
+                className="relative w-full max-w-lg max-h-[90dvh] overflow-y-auto overscroll-contain bg-card border border-border rounded-3xl p-6 sm:p-8 shadow-2xl animate-fade-up"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}

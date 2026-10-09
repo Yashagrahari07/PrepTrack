@@ -97,11 +97,11 @@ export function CommandMenu() {
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         autoFocus
-                        className="w-full bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+                        className="w-full bg-transparent px-3 py-2 text-sm max-sm:text-base text-foreground placeholder:text-muted-foreground focus:outline-none"
                     />
                     <button
                         onClick={closeCommandMenu}
-                        className="p-1 rounded-lg text-muted-foreground hover:text-foreground"
+                        className="p-2 rounded-lg text-muted-foreground hover:text-foreground"
                     >
                         <X className="w-4 h-4" />
                     </button>

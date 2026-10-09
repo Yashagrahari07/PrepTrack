@@ -47,9 +47,9 @@ export default function DashboardPage() {
         // Goal not set yet → CTA to Settings
         if (!goal) {
             return (
-                <span className="flex items-center gap-1">
-                    <span>Consistency is your greatest advantage. Keep building momentum toward your goal.</span>
-                    <Link to="/home/settings" className="text-primary hover:underline text-xs font-medium ml-1">
+                <span className="flex items-center gap-1 min-w-0 flex-wrap">
+                    <span className="break-words">Consistency is your greatest advantage. Keep building momentum toward your goal.</span>
+                    <Link to="/home/settings" className="text-primary hover:underline text-xs font-medium ml-1 shrink-0">
                         Set your goal →
                     </Link>
                 </span>
@@ -64,9 +64,9 @@ export default function DashboardPage() {
         // Custom goal but empty text
         if (goal === 'custom' && !custom) {
             return (
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1 min-w-0 flex-wrap">
                     <span>Consistency is your greatest advantage. </span>
-                    <Link to="/home/settings" className="text-primary hover:underline text-xs font-medium ml-1">
+                    <Link to="/home/settings" className="text-primary hover:underline text-xs font-medium ml-1 shrink-0">
                         Describe your custom goal →
                     </Link>
                 </span>
@@ -313,7 +313,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Heatmap Grid */}
-                <div className="grid grid-cols-12 sm:grid-cols-[repeat(21,minmax(0,1fr))] md:grid-cols-[repeat(28,minmax(0,1fr))] gap-1.5 pt-2">
+                <div className="grid grid-cols-12 sm:grid-cols-[repeat(21,minmax(0,1fr))] md:grid-cols-[repeat(28,minmax(0,1fr))] gap-1.5 max-sm:gap-1 pt-2">
                     {heatmap.length === 0
                         ? Array.from({ length: 84 }, (_, i) => (
                               <div
@@ -325,6 +325,8 @@ export default function DashboardPage() {
                               <div
                                   key={day.date}
                                   title={`${day.date}: ${day.minutes} mins`}
+                                  role="img"
+                                  aria-label={`${day.date}: ${day.minutes} minutes studied`}
                                   className={`aspect-square rounded-md flex items-center justify-center transition-transform hover:scale-125 ${getHeatmapColor(
                                       day.minutes,
                                   )}`}

@@ -22,7 +22,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="relative min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="relative min-h-screen bg-background flex items-center justify-center p-4 max-sm:py-6 max-sm:flex-col max-sm:justify-start max-sm:gap-5">
             {/* Background layers */}
             <div className="pointer-events-none fixed inset-0 ambient-glow-indigo" aria-hidden="true" />
             <div className="pointer-events-none fixed inset-0 bg-dot-pattern fade-mask-radial opacity-30" aria-hidden="true" />
@@ -30,7 +30,7 @@ export default function LoginPage() {
             {/* Back to home */}
             <Link
                 to="/"
-                className="absolute top-6 left-6 flex items-center gap-2.5 rounded-full bg-card/70 backdrop-blur border border-border pl-1.5 pr-4 py-1.5 text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all text-sm"
+                className="absolute top-6 left-6 max-sm:static max-sm:self-start flex items-center gap-2.5 rounded-full bg-card/70 backdrop-blur border border-border pl-1.5 pr-4 py-1.5 text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all text-sm"
             >
                 <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center shadow-md shadow-primary/30">
                     <Target className="w-3.5 h-3.5 text-white" />
@@ -40,7 +40,7 @@ export default function LoginPage() {
 
             {/* Card */}
             <div className="relative z-10 w-full max-w-md">
-                <div className="glass-panel relative overflow-hidden rounded-3xl p-8 sm:p-10 border border-white/10 shadow-2xl shadow-primary/10 animate-fade-up" style={{ opacity: 0, animationFillMode: 'forwards' }}>
+                <div className="glass-panel relative overflow-hidden rounded-3xl p-6 sm:p-10 border border-white/10 shadow-2xl shadow-primary/10 animate-fade-up" style={{ opacity: 0, animationFillMode: 'forwards' }}>
                     <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" aria-hidden="true" />
 
                     {/* Header */}
@@ -92,7 +92,7 @@ export default function LoginPage() {
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword((v) => !v)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                    className="absolute right-1.5 top-1/2 -translate-y-1/2 p-2 text-muted-foreground hover:text-foreground transition-colors"
                                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                                 >
                                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}

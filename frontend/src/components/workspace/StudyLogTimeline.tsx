@@ -18,7 +18,7 @@ export function StudyLogTimeline({ topicId }: StudyLogTimelineProps) {
     return (
         <div className="glass-panel rounded-3xl p-6 border border-white/10 flex flex-col gap-4">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-amber-400" />
                     <h3 className="font-bold text-foreground text-sm sm:text-base">Study History</h3>

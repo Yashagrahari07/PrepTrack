@@ -313,7 +313,7 @@ export function TopicTreeCard({
                 </div>
 
                 {/* Right Actions: Workspace link, Status Dropdown & Action Buttons */}
-                <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+                <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap max-sm:w-full">
                     {/* Reorder chevrons */}
                     {onMoveUp && onMoveDown && (
                         <span className="flex items-center shrink-0" role="group" aria-label={`Reorder ${topic.title}`}>
@@ -366,47 +366,50 @@ export function TopicTreeCard({
                         <option value="INTERVIEW_READY">Interview Ready</option>
                     </select>
 
-                    {/* Quick Log button */}
-                    <button
-                        type="button"
-                        onClick={() => openQuickLog(topic.id)}
-                        className="p-1.5 rounded-xl bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                        title="Log study time for this topic"
-                    >
-                        <Clock className="w-4 h-4" />
-                    </button>
+                    {/* Quick Log, Add, Edit, Delete: wraps as one unit below Studio on mobile */}
+                    <span className="flex items-center gap-2 max-sm:ml-16">
+                        {/* Quick Log button */}
+                        <button
+                            type="button"
+                            onClick={() => openQuickLog(topic.id)}
+                            className="p-1.5 rounded-xl bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                            title="Log study time for this topic"
+                        >
+                            <Clock className="w-4 h-4" />
+                        </button>
 
-                    {/* Add Subtopic */}
-                    <button
-                        type="button"
-                        onClick={() => onAddSubtopic(topic)}
-                        className="p-1.5 rounded-xl bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                        title="Add subtopic under this topic"
-                    >
-                        <Plus className="w-4 h-4" />
-                    </button>
+                        {/* Add Subtopic */}
+                        <button
+                            type="button"
+                            onClick={() => onAddSubtopic(topic)}
+                            className="p-1.5 rounded-xl bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                            title="Add subtopic under this topic"
+                        >
+                            <Plus className="w-4 h-4" />
+                        </button>
 
-                    {/* Edit */}
-                    <button
-                        type="button"
-                        onClick={() => onRequestEdit(topic)}
-                        className="p-1.5 rounded-xl hover:bg-primary/15 text-muted-foreground hover:text-primary transition-colors"
-                        title="Edit topic"
-                        aria-label={`Edit topic ${topic.title}`}
-                    >
-                        <Pencil className="w-4 h-4" />
-                    </button>
+                        {/* Edit */}
+                        <button
+                            type="button"
+                            onClick={() => onRequestEdit(topic)}
+                            className="p-1.5 rounded-xl hover:bg-primary/15 text-muted-foreground hover:text-primary transition-colors"
+                            title="Edit topic"
+                            aria-label={`Edit topic ${topic.title}`}
+                        >
+                            <Pencil className="w-4 h-4" />
+                        </button>
 
-                    {/* Delete */}
-                    <button
-                        type="button"
-                        onClick={() => onRequestDelete('topic', topic.id, topic.title)}
-                        className="p-1.5 rounded-xl hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
-                        title="Delete topic"
-                        aria-label={`Delete topic ${topic.title}`}
-                    >
-                        <Trash2 className="w-4 h-4" />
-                    </button>
+                        {/* Delete */}
+                        <button
+                            type="button"
+                            onClick={() => onRequestDelete('topic', topic.id, topic.title)}
+                            className="p-1.5 rounded-xl hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
+                            title="Delete topic"
+                            aria-label={`Delete topic ${topic.title}`}
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                    </span>
                 </div>
             </div>
 

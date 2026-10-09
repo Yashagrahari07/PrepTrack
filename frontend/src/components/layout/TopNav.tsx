@@ -37,9 +37,9 @@ export function TopNav() {
     const showReferenceSheet = settings?.show_reference_sheet ?? true;
 
     return (
-        <header className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 py-3.5 bg-card/80 backdrop-blur-md border-b border-border">
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-2 px-4 sm:px-6 py-3.5 bg-card/80 backdrop-blur-md border-b border-border">
             {/* Left: Mobile menu toggle & page title */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 max-sm:gap-2 min-w-0">
                 <button
                     onClick={toggleSidebar}
                     className="md:hidden p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
@@ -48,15 +48,15 @@ export function TopNav() {
                     <Menu className="w-5 h-5" />
                 </button>
 
-                <div>
-                    <h1 className="text-base sm:text-lg font-bold text-foreground tracking-tight">
+                <div className="min-w-0">
+                    <h1 className="text-base sm:text-lg font-bold text-foreground tracking-tight max-sm:truncate max-sm:max-w-[38vw]">
                         {getPageTitle(location.pathname)}
                     </h1>
                 </div>
             </div>
 
             {/* Right: Actions, Streak & Log Time */}
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 {/* Reference Sheet Shortcut */}
                 {showReferenceSheet && (
                     <a

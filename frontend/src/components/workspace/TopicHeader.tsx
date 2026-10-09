@@ -74,9 +74,9 @@ export function TopicHeader({ topic }: TopicHeaderProps) {
                         </div>
                     )}
                     <div className="flex items-center gap-2">
-                        <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
-                            {topic.title}
-                        </h1>
+                    <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight break-words min-w-0">
+                        {topic.title}
+                    </h1>
                         <button
                             type="button"
                             onClick={() => openEditTopicModal(topic)}

@@ -391,7 +391,7 @@ export default function SettingsPage() {
                 </div>
 
                 {/* ── Sticky action bar ─────────────────────────────── */}
-                <div className="sticky bottom-0 z-10 glass-panel rounded-2xl border border-white/10 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="sticky bottom-0 max-sm:bottom-3 z-10 glass-panel rounded-2xl border border-white/10 px-4 py-3 max-sm:pb-[env(safe-area-inset-bottom)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                         {isDirty && !isPending ? (
                             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 text-xs font-semibold text-amber-400">

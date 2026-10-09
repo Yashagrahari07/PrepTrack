@@ -42,7 +42,7 @@ export function RevisionQueueCard({ revision }: RevisionQueueCardProps) {
 
             {/* Topic Title & Workspace link */}
             <div className="flex items-start justify-between gap-3">
-                <h3 className="font-bold text-foreground text-base sm:text-lg tracking-tight">
+                <h3 className="font-bold text-foreground text-base sm:text-lg tracking-tight min-w-0 break-words">
                     {revision.topic_title}
                 </h3>
 

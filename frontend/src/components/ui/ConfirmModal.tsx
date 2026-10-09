@@ -74,7 +74,7 @@ export function ConfirmModal({
                 aria-modal="true"
                 aria-labelledby={titleId}
                 aria-describedby={descriptionId}
-                className="relative w-full max-w-md bg-card border border-border rounded-3xl p-6 shadow-2xl animate-fade-up"
+                className="relative w-full max-w-md max-h-[90dvh] overflow-y-auto overscroll-contain bg-card border border-border rounded-3xl p-6 shadow-2xl animate-fade-up"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between mb-5">

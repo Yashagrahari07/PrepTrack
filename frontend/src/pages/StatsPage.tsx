@@ -119,7 +119,7 @@ export default function StatsPage() {
                     <p className="text-xs text-muted-foreground">Total study time aggregated by week</p>
                 </div>
 
-                <div className="h-72 w-full pt-4">
+                <div className="h-72 max-sm:h-64 w-full pt-4">
                     {weeklyChartData.length === 0 ? (
                         <div className="h-full rounded-2xl border border-dashed border-border flex items-center justify-center text-xs text-muted-foreground">
                             No study hours recorded in the past 8 weeks.
@@ -133,6 +133,7 @@ export default function StatsPage() {
                                     stroke="hsl(215 16% 47%)"
                                     fontSize={11}
                                     tickLine={false}
+                                    interval="preserveStartEnd"
                                 />
                                 <YAxis
                                     stroke="hsl(215 16% 47%)"
@@ -176,38 +177,41 @@ export default function StatsPage() {
                     </p>
                 ) : (
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs">
+                        <table className="w-full min-w-[600px] text-left text-xs">
                             <thead>
                                 <tr className="border-b border-border text-muted-foreground font-semibold">
-                                    <th className="pb-3 px-3">#</th>
+                                    <th className="pb-3 px-3 whitespace-nowrap">#</th>
                                     <th className="pb-3 px-3">Topic Title</th>
-                                    <th className="pb-3 px-3">Category</th>
-                                    <th className="pb-3 px-3 text-right">Logged Time</th>
-                                    <th className="pb-3 px-3 text-right">Action</th>
+                                    <th className="pb-3 px-3 whitespace-nowrap">Category</th>
+                                    <th className="pb-3 px-3 text-right whitespace-nowrap">Logged Time</th>
+                                    <th className="pb-3 px-3 text-right whitespace-nowrap">Action</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border/50">
                                 {topTopics.map((topic, index) => (
                                     <tr key={topic.topic_id} className="hover:bg-muted/20 transition-colors">
-                                        <td className="py-3 px-3 font-bold text-muted-foreground">
+                                        <td className="py-3 px-3 font-bold text-muted-foreground whitespace-nowrap">
                                             {index + 1}
                                         </td>
-                                        <td className="py-3 px-3 font-semibold text-foreground">
+                                        <td
+                                            className="py-3 px-3 font-semibold text-foreground max-w-[180px] truncate"
+                                            title={topic.topic_title}
+                                        >
                                             {topic.topic_title}
                                         </td>
-                                        <td className="py-3 px-3 text-muted-foreground">
+                                        <td className="py-3 px-3 text-muted-foreground whitespace-nowrap">
                                             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium text-[11px]">
                                                 <BookOpen className="w-3 h-3" />
                                                 {topic.category_name}
                                             </span>
                                         </td>
-                                        <td className="py-3 px-3 text-right font-bold text-foreground">
+                                        <td className="py-3 px-3 text-right font-bold text-foreground whitespace-nowrap">
                                             {topic.total_minutes} mins ({(topic.total_minutes / 60).toFixed(1)}h)
                                         </td>
                                         <td className="py-3 px-3 text-right">
                                             <Link
                                                 to={`/home/topics/${topic.topic_id}`}
-                                                className="inline-flex items-center gap-1 text-primary hover:underline text-[11px] font-semibold"
+                                                className="inline-flex items-center gap-1 text-primary hover:underline text-[11px] font-semibold whitespace-nowrap"
                                             >
                                                 <span>Studio</span>
                                                 <ExternalLink className="w-3 h-3" />
@@ -228,7 +232,7 @@ export default function StatsPage() {
                     <p className="text-xs text-muted-foreground">Daily activity intensity map</p>
                 </div>
 
-                <div className="grid grid-cols-12 sm:grid-cols-[repeat(21,minmax(0,1fr))] md:grid-cols-[repeat(28,minmax(0,1fr))] gap-1.5 pt-2">
+                <div className="grid grid-cols-12 sm:grid-cols-[repeat(21,minmax(0,1fr))] md:grid-cols-[repeat(28,minmax(0,1fr))] gap-1.5 max-sm:gap-1 pt-2">
                     {heatmap.length === 0
                         ? Array.from({ length: 84 }, (_, i) => (
                               <div
@@ -240,6 +244,8 @@ export default function StatsPage() {
                               <div
                                   key={day.date}
                                   title={`${day.date}: ${day.minutes} mins`}
+                                  role="img"
+                                  aria-label={`${day.date}: ${day.minutes} minutes studied`}
                                   className={`aspect-square rounded-md transition-transform hover:scale-125 ${getHeatmapColor(
                                       day.minutes,
                                   )}`}

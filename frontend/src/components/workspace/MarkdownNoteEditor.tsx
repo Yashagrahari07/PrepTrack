@@ -99,7 +99,7 @@ export function MarkdownNoteEditor({ topicId, initialNotes = '' }: MarkdownNoteE
     return (
         <div className="glass-panel rounded-3xl p-6 border border-white/10 flex flex-col gap-4">
             {/* Header with Mode Switcher & Save Button */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-primary" />
                     <h3 className="font-bold text-foreground text-sm sm:text-base">Revision Notes</h3>
@@ -163,7 +163,7 @@ export function MarkdownNoteEditor({ topicId, initialNotes = '' }: MarkdownNoteE
                     onChange={(e) => setDraftNote(topicId, e.target.value)}
                     placeholder={`Write key takeaways, SQL queries, or architectural formulas here in Markdown...\n\n## Key Concepts\n- Bullet points...`}
                     rows={12}
-                    className="w-full bg-input/20 rounded-2xl border border-border p-4 text-xs font-mono text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring/30 leading-relaxed resize-y"
+                    className="w-full bg-input/20 rounded-2xl border border-border p-4 text-xs max-sm:text-base font-mono text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring/30 leading-relaxed resize-y"
                 />
             ) : (
                 <div className="min-h-[200px] p-4 rounded-2xl bg-card border border-border overflow-y-auto">
