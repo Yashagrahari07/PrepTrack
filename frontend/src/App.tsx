@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { ThemeProvider } from '@/providers/ThemeProvider';
+import { useAppStore } from '@/stores/app/app.store';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { GuestRoute } from '@/components/GuestRoute';
 import AppLayout from '@/components/layout/AppLayout';
@@ -15,6 +16,25 @@ import RevisionsPage from '@/pages/RevisionsPage';
 import StatsPage from '@/pages/StatsPage';
 import SettingsPage from '@/pages/SettingsPage';
 import GuidePage from '@/pages/GuidePage';
+
+function AppToaster() {
+    const theme = useAppStore((s) => s.theme);
+    return (
+        <Toaster
+            position="bottom-right"
+            theme={theme}
+            richColors
+            closeButton
+            expand={false}
+            visibleToasts={3}
+            gap={12}
+            duration={3000}
+            toastOptions={{
+                duration: 3000,
+            }}
+        />
+    );
+}
 
 export default function App() {
     return (
@@ -50,15 +70,8 @@ export default function App() {
                         <Route path="*" element={<Navigate to="/home" replace />} />
                     </Routes>
 
-                    {/* Global toast notifications */}
-                    <Toaster
-                        position="bottom-right"
-                        theme="dark"
-                        richColors
-                        toastOptions={{
-                            duration: 4000,
-                        }}
-                    />
+                    {/* Global toast notifications — 3s auto-dismiss, capped, swipe/close to clear */}
+                    <AppToaster />
                 </ThemeProvider>
             </BrowserRouter>
         </QueryProvider>

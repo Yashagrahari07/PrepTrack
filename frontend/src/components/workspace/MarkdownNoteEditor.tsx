@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FileText, Eye, Edit3, Save, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUpdateTopic } from '@/hooks/useCurriculum';
@@ -13,13 +13,13 @@ export function MarkdownNoteEditor({ topicId, initialNotes = '' }: MarkdownNoteE
     // ── Workspace slice: draft notes persist across navigations ───────────
     const draftNotes = useAppStore((s) => s.draftNotes);
     const setDraftNote = useAppStore((s) => s.setDraftNote);
-    const clearDraftNote = useAppStore((s) => s.clearDraftNote);
 
     // Initialise draft from store if present, otherwise fall back to server value
     const notes = draftNotes[topicId] ?? initialNotes;
 
     const [mode, setMode] = useState<'edit' | 'preview'>('edit');
     const [isSaved, setIsSaved] = useState(false);
+    const savedTimerRef = useRef<number | null>(null);
 
     const { mutate: updateTopic, isPending } = useUpdateTopic();
 
@@ -33,17 +33,73 @@ export function MarkdownNoteEditor({ topicId, initialNotes = '' }: MarkdownNoteE
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [topicId, initialNotes]);
 
+    // Reset the transient "Saved!" indicator when switching topics.
+    useEffect(() => {
+        setIsSaved(false);
+        if (savedTimerRef.current !== null) {
+            window.clearTimeout(savedTimerRef.current);
+            savedTimerRef.current = null;
+        }
+    }, [topicId]);
+
+    // Clear the "Saved!" timer on unmount to avoid setting state on an unmounted component.
+    useEffect(() => {
+        return () => {
+            if (savedTimerRef.current !== null) {
+                window.clearTimeout(savedTimerRef.current);
+            }
+        };
+    }, []);
+
+    // Visual indicator: draft differs from saved server value
+    const hasDraft = draftNotes[topicId] !== undefined && draftNotes[topicId] !== initialNotes;
+    const isDirty = hasDraft;
+    // Grey-out until there is something to save; also lock while saving / showing Saved!.
+    const isSaveDisabled = !isDirty || isPending || isSaved;
+
     const handleSave = () => {
+        if (!isDirty || isPending) return;
+        const snapshot = notes;
         updateTopic(
-            { id: topicId, data: { notes_md: notes } },
+            { id: topicId, data: { notes_md: snapshot } },
             {
                 onSuccess: () => {
-                    clearDraftNote(topicId); // draft is now persisted server-side
+                    // Keep the draft at the just-saved value instead of clearing it.
+                    // Clearing would fall back to the stale `initialNotes` prop until
+                    // React Query refetches, flashing old content. Keeping it stable
+                    // means `hasDraft` flips to false naturally once `initialNotes`
+                    // catches up to the saved value.
+                    setDraftNote(topicId, snapshot);
                     setIsSaved(true);
-                    setTimeout(() => setIsSaved(false), 2000);
+                    if (savedTimerRef.current !== null) {
+                        window.clearTimeout(savedTimerRef.current);
+                    }
+                    savedTimerRef.current = window.setTimeout(() => {
+                        setIsSaved(false);
+                        savedTimerRef.current = null;
+                    }, 2000);
                 },
             },
         );
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        // Typing after a save immediately clears "Saved!" and re-enables the button.
+        if (isSaved) {
+            setIsSaved(false);
+            if (savedTimerRef.current !== null) {
+                window.clearTimeout(savedTimerRef.current);
+                savedTimerRef.current = null;
+            }
+        }
+        setDraftNote(topicId, e.target.value);
+    };
+
+    const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+            e.preventDefault();
+            if (!isSaveDisabled) handleSave();
+        }
     };
 
     // Simple markdown renderer helper for preview
@@ -93,9 +149,6 @@ export function MarkdownNoteEditor({ topicId, initialNotes = '' }: MarkdownNoteE
         });
     };
 
-    // Visual indicator: draft differs from saved server value
-    const hasDraft = draftNotes[topicId] !== undefined && draftNotes[topicId] !== initialNotes;
-
     return (
         <div className="glass-panel rounded-3xl p-6 border border-white/10 flex flex-col gap-4">
             {/* Header with Mode Switcher & Save Button */}
@@ -139,13 +192,21 @@ export function MarkdownNoteEditor({ topicId, initialNotes = '' }: MarkdownNoteE
                         </button>
                     </div>
 
-                    {/* Save Button */}
-                    <Button size="sm" onClick={handleSave} isLoading={isPending} className="gap-1.5 text-xs">
+                    {/* Save Button — greyed out until there are changes to save */}
+                    <Button
+                        size="sm"
+                        onClick={handleSave}
+                        isLoading={isPending}
+                        loadingText="Saving..."
+                        disabled={isSaveDisabled}
+                        title={isDirty ? 'Save notes (Ctrl+S / ⌘S)' : 'No changes to save'}
+                        className="gap-1.5 text-xs"
+                    >
                         {isSaved ? (
-                            <>
+                            <span aria-live="polite" className="inline-flex items-center gap-1.5">
                                 <Check className="w-3.5 h-3.5 text-emerald-400" />
                                 <span>Saved!</span>
-                            </>
+                            </span>
                         ) : (
                             <>
                                 <Save className="w-3.5 h-3.5" />
@@ -160,7 +221,8 @@ export function MarkdownNoteEditor({ topicId, initialNotes = '' }: MarkdownNoteE
             {mode === 'edit' ? (
                 <textarea
                     value={notes}
-                    onChange={(e) => setDraftNote(topicId, e.target.value)}
+                    onChange={handleChange}
+                    onKeyDown={handleEditorKeyDown}
                     placeholder={`Write key takeaways, SQL queries, or architectural formulas here in Markdown...\n\n## Key Concepts\n- Bullet points...`}
                     rows={12}
                     className="w-full bg-input/20 rounded-2xl border border-border p-4 text-xs max-sm:text-base font-mono text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring/30 leading-relaxed resize-y"

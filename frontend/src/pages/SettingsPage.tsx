@@ -122,6 +122,8 @@ export default function SettingsPage() {
             };
             const suggested = goalTargets[goalTypeDraft] ?? 15;
             toast.info(`Suggested weekly target for ${suggested}h/week`, {
+                // Action toasts need extra dwell time so users can read + click Apply.
+                duration: 8000,
                 action: {
                     label: 'Apply',
                     onClick: () => setWeeklyTargetHoursDraft(suggested),

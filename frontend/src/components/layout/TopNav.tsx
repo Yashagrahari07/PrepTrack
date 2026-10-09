@@ -3,7 +3,7 @@ import {
     Flame,
     RotateCcw,
     Plus,
-    Command,
+    Search,
     Sun,
     Moon,
     ExternalLink,
@@ -94,14 +94,22 @@ export function TopNav() {
                     <span className="hidden sm:inline">Log Session</span>
                 </Button>
 
-                {/* Command Menu Shortcut Trigger */}
+                {/* Command Menu Shortcut Trigger — premium Linear-style search + dual kbd */}
                 <button
                     onClick={openCommandMenu}
-                    className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-muted/50 hover:bg-muted text-muted-foreground text-xs font-medium border border-border/60 transition-colors"
-                    title="Open Command Palette (Ctrl+K)"
+                    aria-label="Open command palette (Control or Command K)"
+                    title="Open Command Palette (Ctrl+K / ⌘K)"
+                    className="group hidden md:flex items-center gap-2 pl-2.5 pr-1.5 py-1.5 rounded-xl bg-muted/40 hover:bg-muted/80 text-muted-foreground border border-border/60 hover:border-primary/30 shadow-sm hover:shadow-md hover:shadow-primary/10 active:scale-[0.97] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                 >
-                    <Command className="w-3.5 h-3.5" />
-                    <span className="font-mono text-[10px]">⌘K</span>
+                    <Search className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                    <span className="flex items-center gap-1" aria-hidden="true">
+                        <kbd className="font-mono text-[10px] font-semibold px-1 py-0.5 rounded-[6px] bg-background border border-border/70 shadow-[0_1px_0_rgba(0,0,0,0.08)] text-muted-foreground group-hover:text-foreground group-hover:border-primary/30 leading-none transition-colors">
+                            ⌘
+                        </kbd>
+                        <kbd className="font-mono text-[10px] font-semibold px-1 py-0.5 rounded-[6px] bg-background border border-border/70 shadow-[0_1px_0_rgba(0,0,0,0.08)] text-muted-foreground group-hover:text-foreground group-hover:border-primary/30 leading-none transition-colors">
+                            K
+                        </kbd>
+                    </span>
                 </button>
 
                 {/* Theme Toggle Button */}

@@ -1,5 +1,4 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import type { ReactNode } from 'react';
 
 const queryClient = new QueryClient({
@@ -10,16 +9,9 @@ const queryClient = new QueryClient({
             retry: 1,
             refetchOnWindowFocus: false,
         },
-        mutations: {
-            onError: (error: unknown) => {
-                // Global mutation error fallback — individual hooks override this
-                const msg =
-                    (error as { response?: { data?: { error?: string } } })?.response?.data?.error;
-                if (msg) {
-                    toast.error(msg);
-                }
-            },
-        },
+        // NOTE: No global mutations.onError toast here — every mutation hook
+        // already shows its own local error toast. A global handler would
+        // double-fire (TanStack v5 runs both), stacking duplicate toasts.
     },
 });
 
